@@ -1,0 +1,22 @@
+# Dependency directories
+node_modules/
+
+# Compiled JavaScript output (if you run tsc compilation)
+dist/
+build/
+
+# Local environment configuration files
+.env
+.env.local
+.env.dev
+.env.prod
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# IDE and diagnostic system files
+.vscode/
+.idea/
+.DS_Store
