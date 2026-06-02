@@ -82,3 +82,11 @@ export const competitions = pgTable("competitions", {
   endTime:     timestamp("end_time", { mode: "date" }).notNull(),
   createdAt:   timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 });
+
+// ── 6. Type Definitions for App Hooks & JSON columns ────────────────────────
+export interface KeystrokeEvent {
+  char: string;
+  expected: string;
+  timestamp: number; // Ms elapsed since race started
+  correct: boolean;
+}
