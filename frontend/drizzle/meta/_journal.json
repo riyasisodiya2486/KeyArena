@@ -8,6 +8,13 @@
       "when": 1780235033884,
       "tag": "0000_flaky_quasimodo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780498324348,
+      "tag": "0001_sparkling_butterfly",
+      "breakpoints": true
     }
   ]
 }

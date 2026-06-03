@@ -3,31 +3,44 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --font-dm-sans: "DM Sans", system-ui, sans-serif;
+  --font-space-mono: "Space Mono", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #303035; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3D3D3A; }
+
+/* Selection */
+::selection { background: #E8593C33; color: #F2F1EE; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid #E8593C;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-400 hover:bg-brand-600 text-white font-medium px-5 py-2.5 rounded-lg
+           transition-all duration-150 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed;
   }
-}
-
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .btn-ghost {
+    @apply bg-transparent hover:bg-surface-2 text-ink-2 hover:text-ink border border-surface-3
+           font-medium px-5 py-2.5 rounded-lg transition-all duration-150 active:scale-[0.98];
+  }
+  .card {
+    @apply bg-surface-1 border border-surface-3 rounded-xl;
+  }
+  .input {
+    @apply bg-surface-2 border border-surface-3 text-ink rounded-lg px-4 py-2.5
+           focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400
+           placeholder:text-ink-3 transition-colors;
   }
 }
