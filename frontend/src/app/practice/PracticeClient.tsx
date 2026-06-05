@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSession }            from "next-auth/react";
 import Link                      from "next/link";
 import { useTypingEngine }       from "@/hooks/useTypingEngine";
@@ -25,7 +25,12 @@ export default function PracticeClient({ isGuest }: Props) {
   // Guest: how many races played this session (to show nudge after 2)
   const [guestRaces, setGuestRaces] = useState(0);
 
-  const engine = useTypingEngine(passage.content);
+  const raceText = useMemo(
+    () => passage.content.replace(/[\u200B-\u200D\uFEFF\r]/g, ""),
+    [passage.content],
+  );
+
+  const engine = useTypingEngine(raceText);
 
   // ── Change difficulty ────────────────────────────────────────────────────
   function changeDifficulty(d: Difficulty) {
@@ -185,7 +190,7 @@ export default function PracticeClient({ isGuest }: Props) {
           <StatsHud stats={engine.stats} status={engine.status} />
 
           <TypingDisplay
-            chars={passage.content.split("")}
+            chars={Array.from(raceText)}
             charStates={engine.charStates}
             cursorIndex={engine.cursorIndex}
           />

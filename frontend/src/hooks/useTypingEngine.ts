@@ -47,7 +47,7 @@ function calcRawWpm(totalChars: number, elapsedMs: number): number {
 }
 
 export function useTypingEngine(passage: string): UseTypingEngineReturn {
-  const chars = passage.split("");
+  const chars = Array.from(passage);
 
   const [status, setStatus]           = useState<EngineStatus>("idle");
   const [inputValue, setInputValue]   = useState("");
@@ -60,15 +60,17 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
   const keystrokeRef  = useRef<KeystrokeEvent[]>([]);
 
   // ── Derived char states ──────────────────────────────────────────────────
+  const typedChars = Array.from(inputValue);
+
   const charStates: CharState[] = chars.map((_, i) => {
-    if (i < inputValue.length) {
-      return inputValue[i] === chars[i] ? "correct" : "wrong";
+    if (i < typedChars.length) {
+      return typedChars[i] === chars[i] ? "correct" : "wrong";
     }
-    if (i === inputValue.length) return "current";
+    if (i === typedChars.length) return "current";
     return "pending";
   });
 
-  const cursorIndex = Math.min(inputValue.length, chars.length);
+  const cursorIndex = Math.min(typedChars.length, chars.length);
 
   // ── Live stats ticker ────────────────────────────────────────────────────
   const startTicker = useCallback(() => {
@@ -117,8 +119,11 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
   const handleInput = useCallback((value: string) => {
     if (status !== "racing") return;
 
+    const nextChars = Array.from(value);
+    const currentChars = Array.from(inputValue);
+
     // Prevent typing past passage end
-    if (value.length > chars.length) return;
+    if (nextChars.length > chars.length) return;
 
     // Auto-start on first keystroke
     if (!startTimeRef.current) {
@@ -126,10 +131,10 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
       startTicker();
     }
 
-    const newChar     = value[value.length - 1] ?? "";
-    const expected    = chars[value.length - 1] ?? "";
+    const newChar     = nextChars[nextChars.length - 1] ?? "";
+    const expected    = chars[nextChars.length - 1] ?? "";
     const isCorrect   = newChar === expected;
-    const isDeleting  = value.length < inputValue.length;
+    const isDeleting  = nextChars.length < currentChars.length;
 
     // Record keystroke (only on additions, not backspace)
     if (!isDeleting && newChar) {
@@ -150,13 +155,15 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
     setInputValue(value);
 
     const elapsedMs      = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
-    const correctChars   = value.split("").filter((c, i) => c === chars[i]).length;
-    const totalChars     = value.length;
+    const correctChars   = nextChars.filter((c, i) => c === chars[i]).length;
+    const totalChars     = nextChars.length;
     const errorsCount    = errorsRef.current;
     const accuracy       = totalChars > 0
       ? Math.round(((totalChars - errorsCount) / totalChars) * 100)
       : 100;
-    const progress       = Math.round((value.length / chars.length) * 100);
+    const progress       = chars.length > 0
+      ? Math.round((totalChars / chars.length) * 100)
+      : 100;
 
     setStats({
       wpm:        calcWpm(correctChars, elapsedMs),
@@ -169,10 +176,10 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
     });
 
     // ── Race finished ──────────────────────────────────────────────────────
-    if (value.length === chars.length) {
+    if (totalChars === chars.length) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       const finalElapsed  = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
-      const finalCorrect  = value.split("").filter((c, i) => c === chars[i]).length;
+      const finalCorrect  = nextChars.filter((c, i) => c === chars[i]).length;
       const finalAcc      = Math.round((finalCorrect / chars.length) * 100);
 
       setStats({
