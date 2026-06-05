@@ -6,6 +6,14 @@ import { inArray } from "drizzle-orm";
 
 const redis = createClient({ url: process.env.REDIS_URL ?? "redis://localhost:6379" });
 await redis.connect();
+let redisReady = false;
+
+try {
+  await redis.connect();
+  redisReady = true;
+} catch {
+  redisReady = false;
+}
 
 const LB_KEYS = {
   alltime: "lb:alltime",
@@ -28,6 +36,10 @@ export async function leaderboardRoutes(app: FastifyInstance) {
 
     if (!["alltime", "weekly", "daily"].includes(board)) {
       return reply.status(400).send({ error: "Invalid board" });
+    }
+
+    if (!redisReady) {
+      return { entries: [], total: 0, page, limit, totalPages: 0 };
     }
 
     const key     = LB_KEYS[board];
@@ -65,6 +77,13 @@ export async function leaderboardRoutes(app: FastifyInstance) {
   app.get<{ Querystring: { userId: string } }>("/me", async (req, reply) => {
     const { userId } = req.query;
     if (!userId) return reply.status(400).send({ error: "userId required" });
+
+    if (!redisReady) {
+      return {
+        rank: { alltime: null, weekly: null, daily: null },
+        wpm: { alltime: null, weekly: null, daily: null },
+      };
+    }
 
     const [alltime, weekly, daily] = await Promise.all([
       redis.zRevRank(LB_KEYS.alltime, userId),

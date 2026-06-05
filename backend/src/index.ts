@@ -32,13 +32,20 @@ app.get("/health", async () =>
 
 // Socket.io with Redis adapter (horizontal scale ready)
 const httpServer = createServer(app.server);
-const pubClient = createClient({ url: process.env.REDIS_URL });
-const subClient = pubClient.duplicate();
-await Promise.all([pubClient.connect(), subClient.connect()]);
+let socketAdapter;
+
+try {
+  const pubClient = createClient({ url: process.env.REDIS_URL ?? "redis://localhost:6379" });
+  const subClient = pubClient.duplicate();
+  await Promise.all([pubClient.connect(), subClient.connect()]);
+  socketAdapter = createAdapter(pubClient, subClient);
+} catch (error) {
+  app.log.warn({ error }, "Redis unavailable; starting Socket.IO without Redis adapter");
+}
 
 const io = new SocketServer(httpServer, {
   cors: { origin: process.env.FRONTEND_URL, credentials: true },
-  adapter: createAdapter(pubClient, subClient),
+  ...(socketAdapter ? { adapter: socketAdapter } : {}),
 });
 registerRaceSocket(io);
 
