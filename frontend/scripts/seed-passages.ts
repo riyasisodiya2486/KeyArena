@@ -14,8 +14,8 @@ import { passages } from "../src/lib/db/schema";
 import { ALL_PASSAGES, RawPassage } from "../src/lib/passages";
 
 interface SeedRow {
-  text: string;
-  length: number;
+  content: string;
+  wordCount: number;
   difficulty: "easy" | "medium" | "hard" | "code";
   author: string;
 }
@@ -35,8 +35,8 @@ async function seed() {
   const seedDb = drizzle(seedClient);
 
   const rows = ALL_PASSAGES.map((p: RawPassage) => ({
-    text:       p.content,
-    length:     p.content.length,
+    content:    p.content,
+    wordCount:  p.content.split(/\s+/).filter(Boolean).length,
     difficulty: p.difficulty,
     author:     p.source ?? "Unknown",
   }));

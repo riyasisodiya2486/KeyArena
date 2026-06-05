@@ -152,7 +152,7 @@ export default function SignInPage() {
               </button>
 
               <p className="text-center text-sm text-ink-3">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link
                   href={`/auth/signup${callbackUrl !== "/practice" ? `?callbackUrl=${callbackUrl}` : ""}`}
                   className="text-brand-400 hover:text-brand-600 font-medium"
@@ -199,7 +199,7 @@ export default function SignInPage() {
               </button>
 
               <p className="text-center text-sm text-ink-3 pt-2">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link
                   href="/auth/signup"
                   className="text-brand-400 hover:text-brand-600 font-medium"

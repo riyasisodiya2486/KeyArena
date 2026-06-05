@@ -45,7 +45,7 @@ export default function AuthErrorPage() {
           {errorCode === "OAuthCreateAccount" && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-5 text-xs text-yellow-400 text-left">
               <strong className="block mb-1">Email already registered</strong>
-              If you've previously signed in with email/password, please use that method instead. You can link your OAuth account in settings once signed in.
+              If you&apos;ve previously signed in with email/password, please use that method instead. You can link your OAuth account in settings once signed in.
             </div>
           )}
 

@@ -34,6 +34,18 @@ const EMPTY_STATS: TypingStats = {
   charsTyped: 0, errorsCount: 0, elapsedMs: 0, progress: 0,
 };
 
+function calcWpm(correctChars: number, elapsedMs: number): number {
+  if (elapsedMs < 500) return 0;
+  const minutes = elapsedMs / 60000;
+  return Math.round(correctChars / 5 / minutes);
+}
+
+function calcRawWpm(totalChars: number, elapsedMs: number): number {
+  if (elapsedMs < 500) return 0;
+  const minutes = elapsedMs / 60000;
+  return Math.round(totalChars / 5 / minutes);
+}
+
 export function useTypingEngine(passage: string): UseTypingEngineReturn {
   const chars = passage.split("");
 
@@ -58,22 +70,8 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
 
   const cursorIndex = Math.min(inputValue.length, chars.length);
 
-  // ── WPM calculation ──────────────────────────────────────────────────────
-  // Standard: words = chars / 5, time in minutes
-  function calcWpm(correctChars: number, elapsedMs: number): number {
-    if (elapsedMs < 500) return 0;
-    const minutes = elapsedMs / 60000;
-    return Math.round(correctChars / 5 / minutes);
-  }
-
-  function calcRawWpm(totalChars: number, elapsedMs: number): number {
-    if (elapsedMs < 500) return 0;
-    const minutes = elapsedMs / 60000;
-    return Math.round(totalChars / 5 / minutes);
-  }
-
   // ── Live stats ticker ────────────────────────────────────────────────────
-  function startTicker() {
+  const startTicker = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
       if (!startTimeRef.current) return;
@@ -89,7 +87,7 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
         };
       });
     }, 250);
-  }
+  }, []);
 
   // ── Start race ───────────────────────────────────────────────────────────
   const startRace = useCallback(() => {
@@ -101,7 +99,7 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
     setStats(EMPTY_STATS);
     setKeystrokeLog([]);
     startTicker();
-  }, []);
+  }, [startTicker]);
 
   // ── Reset ────────────────────────────────────────────────────────────────
   const resetRace = useCallback(() => {
@@ -189,7 +187,7 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
       setKeystrokeLog(keystrokeRef.current);
       setStatus("finished");
     }
-  }, [status, chars, inputValue]);
+  }, [status, chars, inputValue, startTicker]);
 
   // ── Cleanup on unmount ───────────────────────────────────────────────────
   useEffect(() => {

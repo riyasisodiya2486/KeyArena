@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSession }            from "next-auth/react";
 import Link                      from "next/link";
 import { useTypingEngine }       from "@/hooks/useTypingEngine";
@@ -37,24 +37,8 @@ export default function PracticeClient({ isGuest }: Props) {
   }
 
   // ── Next passage ─────────────────────────────────────────────────────────
-  const nextPassage = useCallback(async () => {
-    if (engine.status === "finished" && session?.user && !savedId) {
-      await saveRace();
-    }
-    setPassage(getRandomPassage(difficulty, passage.id));
-    engine.resetRace();
-    setSavedId(null);
-    if (isGuest) setGuestRaces((n) => n + 1);
-  }, [engine, difficulty, passage.id, session, savedId, isGuest]);
-
-  // ── Retry ────────────────────────────────────────────────────────────────
-  function retryPassage() {
-    engine.resetRace();
-    setSavedId(null);
-  }
-
   // ── Save race to DB ───────────────────────────────────────────────────────
-  async function saveRace() {
+  const saveRace = useCallback(async () => {
     if (!session?.user) return; // guests don't save
     setSaving(true);
     try {
@@ -80,12 +64,30 @@ export default function PracticeClient({ isGuest }: Props) {
     } finally {
       setSaving(false);
     }
+  }, [session, difficulty, engine]);
+
+  const nextPassage = useCallback(async () => {
+    if (engine.status === "finished" && session?.user && !savedId) {
+      await saveRace();
+    }
+    setPassage(getRandomPassage(difficulty, passage.id));
+    engine.resetRace();
+    setSavedId(null);
+    if (isGuest) setGuestRaces((n) => n + 1);
+  }, [engine, difficulty, passage.id, session, savedId, isGuest, saveRace]);
+
+  // ── Retry ────────────────────────────────────────────────────────────────
+  function retryPassage() {
+    engine.resetRace();
+    setSavedId(null);
   }
 
   // Auto-save for signed-in users when race finishes
-  if (engine.status === "finished" && session?.user && !savedId && !saving) {
-    saveRace();
-  }
+  useEffect(() => {
+    if (engine.status === "finished" && session?.user && !savedId && !saving) {
+      saveRace();
+    }
+  }, [engine.status, session, savedId, saving, saveRace]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">
@@ -96,7 +98,7 @@ export default function PracticeClient({ isGuest }: Props) {
                         px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p className="text-sm font-medium text-ink">
-              You're practising as a guest
+              You&apos;re practising as a guest
             </p>
             <p className="text-xs text-ink-2 mt-0.5">
               Sign up free to save your scores, track progress, and appear on the leaderboard.
@@ -119,14 +121,14 @@ export default function PracticeClient({ isGuest }: Props) {
       {isGuest && guestRaces >= 2 && engine.status === "idle" && (
         <div className="mb-6 bg-surface-1 border border-surface-3 rounded-xl px-5 py-4">
           <p className="text-sm font-medium text-ink mb-1">
-            🏆 You've done {guestRaces} races — want to track your progress?
+            🏆 You&apos;ve done {guestRaces} races — want to track your progress?
           </p>
           <p className="text-xs text-ink-2 mb-3">
             Create a free account to unlock your personal stats, WPM history chart, and global ranking.
           </p>
           <Link href="/auth/signup?callbackUrl=/practice"
             className="btn-primary text-xs px-4 py-2 inline-block">
-            Sign up — it's free →
+            Sign up — it&apos;s free →
           </Link>
         </div>
       )}
@@ -167,7 +169,7 @@ export default function PracticeClient({ isGuest }: Props) {
                   Save this result to your profile
                 </p>
                 <p className="text-xs text-ink-2 mt-0.5">
-                  {engine.stats.wpm} WPM · {engine.stats.accuracy}% accuracy — don't let it disappear!
+                  {engine.stats.wpm} WPM · {engine.stats.accuracy}% accuracy — don&apos;t let it disappear!
                 </p>
               </div>
               <Link href="/auth/signup?callbackUrl=/practice"
