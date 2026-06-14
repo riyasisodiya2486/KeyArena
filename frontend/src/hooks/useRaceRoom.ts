@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket }   from "socket.io-client";
-import type { RaceRoom, Player } from "@/types/race";
+import type { RaceRoom, Player, Standing } from "@/types/race";
 
 export type RoomPhase = "connecting" | "lobby" | "countdown" | "racing" | "finished" | "error";
 
@@ -21,7 +21,7 @@ export function useRaceRoom({ code, userId, username, name, image }: UseRaceRoom
   const [countdown,     setCountdown]     = useState<number>(3);
   const [error,         setError]         = useState<string>("");
   const [myRank,        setMyRank]        = useState<number | null>(null);
-  const [standings,     setStandings]     = useState<Player[]>([]);
+  const [standings,     setStandings]     = useState<Standing[]>([]);
   const countdownTimer  = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const socket = socketRef.current;
@@ -146,7 +146,7 @@ export function useRaceRoom({ code, userId, username, name, image }: UseRaceRoom
     });
 
     // ── All finished ───────────────────────────────────────────────────────
-    s.on("race_finished", (data: { standings: Player[] }) => {
+    s.on("race_finished", (data: { standings: Standing[] }) => {
       setPhase("finished");
       setStandings(data.standings);
       setRoom((r) => r ? { ...r, status: "finished" } : r);

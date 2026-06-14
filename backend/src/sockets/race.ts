@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { redis } from "../lib/redis.js";
 import { db }    from "../lib/db.js";
 import { raceSessions, rooms, passages } from "../lib/schema.js";
+import type { KeystrokeEvent } from "../lib/schema.js";
 import { eq, inArray } from "drizzle-orm";
 import { submitScore } from "../lib/redis.js";
 
@@ -332,7 +333,7 @@ export function registerRaceSocket(io: Server) {
           accuracy:    data.accuracy,
           timeTakenMs: data.timeTakenMs,
           rank,
-          keystrokeLog: data.keystrokeLog ?? [],
+          keystrokeLog: (data.keystrokeLog ?? []) as KeystrokeEvent[],
           completedAt: new Date(),
         });
 
