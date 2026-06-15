@@ -2,52 +2,35 @@
 
 import { useEffect, useState } from "react";
 
-interface CountdownOverlayProps {
-  countdownValue: number; // 3, 2, 1, 0
-}
-
-export function CountdownOverlay({ countdownValue }: CountdownOverlayProps) {
-  const [animate, setAnimate] = useState(false);
+export function CountdownOverlay({ value }: { value: number }) {
+  const [scale, setScale] = useState(1.4);
+  const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
-    setAnimate(false);
-    const t = setTimeout(() => setAnimate(true), 50);
+    setScale(1.4); setOpacity(0);
+    const t = setTimeout(() => { setScale(1); setOpacity(1); }, 30);
     return () => clearTimeout(t);
-  }, [countdownValue]);
+  }, [value]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center
-                    bg-surface/90 backdrop-blur-sm">
-      <div className="text-center">
-        {countdownValue > 0 ? (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center
+                    bg-surface/90 backdrop-blur-sm select-none">
+      <div style={{ transform: `scale(${scale})`, opacity, transition: "all 0.25s cubic-bezier(.34,1.56,.64,1)" }}>
+        {value > 0 ? (
           <>
-            <div
-              className="font-mono font-bold text-brand-400 transition-all duration-300"
-              style={{
-                fontSize: "120px",
-                lineHeight: 1,
-                opacity: animate ? 1 : 0,
-                transform: animate ? "scale(1)" : "scale(1.5)",
-              }}
-            >
-              {countdownValue}
+            <div className="font-mono font-bold text-brand-400 text-center leading-none mb-4"
+              style={{ fontSize: "clamp(80px, 20vw, 140px)" }}>
+              {value}
             </div>
-            <p className="text-ink-2 text-lg mt-4 font-medium">Get ready…</p>
+            <p className="text-center text-ink-2 text-xl font-medium">Get ready…</p>
           </>
         ) : (
           <>
-            <div
-              className="font-mono font-bold text-green-400 transition-all duration-200"
-              style={{
-                fontSize: "80px",
-                lineHeight: 1,
-                opacity: animate ? 1 : 0,
-                transform: animate ? "scale(1)" : "scale(0.8)",
-              }}
-            >
+            <div className="font-mono font-bold text-green-400 text-center leading-none mb-4"
+              style={{ fontSize: "clamp(60px, 15vw, 100px)" }}>
               GO!
             </div>
-            <p className="text-ink-2 text-lg mt-4 font-medium">Type as fast as you can!</p>
+            <p className="text-center text-ink-2 text-xl font-medium">Type as fast as you can!</p>
           </>
         )}
       </div>

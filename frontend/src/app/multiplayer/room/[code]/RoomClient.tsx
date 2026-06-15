@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useRaceRoom } from "@/hooks/useRaceRoom";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
+import { WaitingRoom } from "@/components/multiplayer/WaitingRoom";
+import { CountdownOverlay } from "@/components/multiplayer/CountdownOverlay";
+import { RaceHUD } from "@/components/multiplayer/RaceHUD";
+import { LiveProgressBars } from "@/components/multiplayer/LiveProgressBars";
+import { FinishScreen } from "@/components/multiplayer/FinishScreen";
 import { TypingDisplay } from "@/components/practice/TypingDisplay";
 import { TypingInput } from "@/components/practice/TypingInput";
-import { StatsHud } from "@/components/practice/StatsHud";
-import { PlayerCard } from "@/components/multiplayer/PlayerCard";
-import { RacerProgressBars } from "@/components/multiplayer/RacerProgressBars";
-import { CountdownOverlay } from "@/components/multiplayer/CountdownOverlay";
-import { RaceFinishedScreen } from "@/components/multiplayer/RaceFinishedScreen";
 
 interface RoomClientProps {
   code:     string;
@@ -22,32 +22,38 @@ interface RoomClientProps {
 }
 
 export function RoomClient({ code, userId, username, name, image }: RoomClientProps) {
-  const router   = useRouter();
+  const router     = useRouter();
   const sentFinish = useRef(false);
+  const [copied,   setCopied]   = useState(false);
+  const [myRank,   setMyRank]   = useState<number | null>(null);
 
   const {
-    phase, room, players, myPlayer, countdown,
-    error, myRank, standings, isHost,
+    phase, room, players, countdown,
+    error, standings, isHost,
     startRace, sendProgress, sendFinished, leaveRoom,
   } = useRaceRoom({ code, userId, username, name, image });
 
   const passageText = room?.passageText ?? "";
   const engine      = useTypingEngine(passageText);
 
-  // ── Send progress updates while racing ─────────────────────────────────
-  useEffect(() => {
-    if (phase !== "racing" || engine.status !== "racing") return;
-    sendProgress(engine.stats.progress, engine.stats.wpm, engine.stats.accuracy);
-  }, [phase, engine.stats.progress, engine.stats.wpm, engine.stats.accuracy, engine.status, sendProgress]);
-
-  // ── Auto-start engine when race begins ─────────────────────────────────
+  // Auto-start typing engine when race begins
   useEffect(() => {
     if (phase === "racing" && engine.status === "idle") {
       engine.startRace();
     }
-  }, [phase, engine.status, engine.startRace]);
+  }, [phase]);
 
-  // ── Send finish when typing complete ───────────────────────────────────
+  // Throttled progress updates — every 250ms max
+  const lastSent = useRef(0);
+  useEffect(() => {
+    if (phase !== "racing" || engine.status !== "racing") return;
+    const now = Date.now();
+    if (now - lastSent.current < 250) return;
+    lastSent.current = now;
+    sendProgress(engine.stats.progress, engine.stats.wpm, engine.stats.accuracy);
+  }, [engine.stats.progress]);
+
+  // Send finish when typing complete
   useEffect(() => {
     if (engine.status !== "finished" || sentFinish.current) return;
     sentFinish.current = true;
@@ -57,23 +63,34 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
       accuracy:     engine.stats.accuracy,
       timeTakenMs:  engine.stats.elapsedMs,
       keystrokeLog: engine.keystrokeLog as object[],
-    }).catch(console.error);
-  }, [engine.status, engine.stats.wpm, engine.stats.rawWpm, engine.stats.accuracy, engine.stats.elapsedMs, engine.keystrokeLog, sendFinished]);
+    })
+      .then(({ rank }) => setMyRank(rank))
+      .catch(console.error);
+  }, [engine.status]);
 
-  // ── Reset for rematch ────────────────────────────────────────────────
+  // Copy room link
+  function handleCopy() {
+    const url = `${window.location.origin}/multiplayer/room/${code}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  // Rematch — go back to create
   function handleRematch() {
     sentFinish.current = false;
     engine.resetRace();
     router.push("/multiplayer/create");
   }
 
-  // ── Error state ────────────────────────────────────────────────────────
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <div className="max-w-md mx-auto px-4 py-16 text-center">
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="text-4xl mb-4">😕</div>
-        <h2 className="text-xl font-bold text-ink mb-2">Can&apos;t join room</h2>
-        <p className="text-ink-2 text-sm mb-6">{error || "Room not found or already started."}</p>
+        <h2 className="text-xl font-bold text-ink mb-2">Can't join room</h2>
+        <p className="text-sm text-ink-2 mb-6">{error || "Room not found or already in progress."}</p>
         <div className="flex gap-3 justify-center">
           <Link href="/multiplayer/join"   className="btn-ghost px-5 py-2.5">Try another code</Link>
           <Link href="/multiplayer/create" className="btn-primary px-5 py-2.5">Create room</Link>
@@ -82,20 +99,35 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
     );
   }
 
-  // ── Connecting ─────────────────────────────────────────────────────────
+  // ── Connecting ────────────────────────────────────────────────────────────
   if (phase === "connecting") {
     return (
       <div className="flex items-center justify-center h-64 gap-3">
         <div className="w-6 h-6 border-2 border-surface-3 border-t-brand-400 rounded-full animate-spin" />
-        <span className="text-ink-2">Connecting to room {code}…</span>
+        <span className="text-ink-2 font-medium">Connecting to room <span className="font-mono text-brand-400">{code}</span>…</span>
       </div>
     );
   }
 
-  // ── Finished ──────────────────────────────────────────────────────────
+  // ── Lobby ─────────────────────────────────────────────────────────────────
+  if (phase === "lobby") {
+    return (
+      <WaitingRoom
+        room={room!}
+        players={players}
+        myUserId={userId}
+        isHost={isHost}
+        onStart={startRace}
+        onCopy={handleCopy}
+        copied={copied}
+      />
+    );
+  }
+
+  // ── Finished ──────────────────────────────────────────────────────────────
   if (phase === "finished") {
     return (
-      <RaceFinishedScreen
+      <FinishScreen
         standings={standings}
         myUserId={userId}
         roomCode={code}
@@ -104,131 +136,77 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
     );
   }
 
-  // ── Countdown overlay ─────────────────────────────────────────────────
-  const showCountdown = phase === "countdown";
-
+  // ── Racing (+ countdown overlay) ─────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      {showCountdown && <CountdownOverlay countdownValue={countdown} />}
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      {/* Countdown overlay */}
+      {phase === "countdown" && <CountdownOverlay value={countdown} />}
 
-      {/* Room header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-xl font-bold font-mono text-ink">Room</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="font-mono text-lg font-bold text-brand-400 tracking-widest">{code}</span>
-            <button
-              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/multiplayer/room/${code}`)}
-              className="text-xs text-ink-3 hover:text-ink-2 transition-colors border border-surface-3
-                         px-2 py-0.5 rounded"
-            >
-              Copy link
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className={`text-xs px-2 py-1 rounded-full font-medium border ${
-            phase === "racing"
-              ? "bg-green-500/10 text-green-400 border-green-500/30"
-              : phase === "countdown"
-              ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30"
-              : "bg-surface-2 text-ink-3 border-surface-3"
-          }`}>
-            {phase === "lobby"     ? `Waiting · ${players.length}/${room?.maxPlayers ?? 4}`  : ""}
-            {phase === "countdown" ? "Starting…" : ""}
-            {phase === "racing"    ? "🏁 Racing" : ""}
+      {/* Top bar */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-sm font-bold text-brand-400 tracking-wider">{code}</span>
+          <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-500/10
+                           text-green-400 border border-green-500/30 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+            Racing
           </span>
         </div>
+        <span className="text-xs text-ink-3">{players.length} racer{players.length !== 1 ? "s" : ""}</span>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      {/* Stats HUD */}
+      <div className="mb-4">
+        <RaceHUD
+          stats={engine.stats}
+          status={engine.status}
+          myRank={myRank}
+          players={players.length}
+        />
+      </div>
 
-        {/* Left: Players list */}
-        <div className="space-y-2">
-          <p className="text-xs text-ink-3 uppercase tracking-wider font-medium mb-2">Players</p>
-          {players.map((p, i) => (
-            <PlayerCard
-              key={p.userId}
-              player={p}
-              index={i}
-              isMe={p.userId === userId}
-              isHost={p.userId === room?.hostId}
-              status={phase}
+      {/* Live progress bars */}
+      <div className="card p-4 mb-4">
+        <p className="text-xs text-ink-3 uppercase tracking-wider mb-3 font-medium">Live positions</p>
+        <LiveProgressBars players={players} myUserId={userId} />
+      </div>
+
+      {/* Typing area */}
+      {passageText && (
+        <>
+          <TypingDisplay
+            chars={passageText.split("")}
+            charStates={engine.charStates}
+            cursorIndex={engine.cursorIndex}
+          />
+          <div className="mt-3">
+            <TypingInput
+              value={engine.inputValue}
+              status={engine.status}
+              onChange={engine.handleInput}
+              onStart={engine.startRace}
             />
-          ))}
+          </div>
+        </>
+      )}
 
-          {/* Start button — host only, lobby only */}
-          {phase === "lobby" && isHost && (
-            <button
-              onClick={startRace}
-              disabled={players.length < 1}
-              className="btn-primary w-full py-2.5 mt-2 text-sm"
-            >
-              Start race →
-            </button>
-          )}
-          {phase === "lobby" && !isHost && (
-            <p className="text-xs text-ink-3 text-center py-2">
-              Waiting for host to start…
-            </p>
-          )}
+      {/* Already finished — waiting for others */}
+      {engine.status === "finished" && phase === "racing" && (
+        <div className="mt-4 card px-5 py-4 text-center">
+          <div className="text-xl mb-1">
+            {myRank === 1 ? "🥇" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : "🏁"}
+          </div>
+          <p className="text-sm font-medium text-ink">
+            {myRank ? `You finished #${myRank}!` : "You finished!"} Waiting for others…
+          </p>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            {[0,1,2].map(i => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
         </div>
-
-        {/* Right: Typing area */}
-        <div className="md:col-span-2 space-y-4">
-          {/* Progress bars (racing only) */}
-          {phase === "racing" && (
-            <div className="card p-4">
-              <p className="text-xs text-ink-3 uppercase tracking-wider mb-3">Live positions</p>
-              <RacerProgressBars players={players} myUserId={userId} />
-            </div>
-          )}
-
-          {/* Stats HUD */}
-          {(phase === "racing" || phase === "countdown") && (
-            <StatsHud stats={engine.stats} status={engine.status} />
-          )}
-
-          {/* Typing display + input (racing only) */}
-          {phase === "racing" && passageText && (
-            <>
-              <TypingDisplay
-                chars={passageText.split("")}
-                charStates={engine.charStates}
-                cursorIndex={engine.cursorIndex}
-              />
-              <TypingInput
-                value={engine.inputValue}
-                status={engine.status}
-                onChange={engine.handleInput}
-                onStart={engine.startRace}
-              />
-            </>
-          )}
-
-          {/* Lobby waiting message */}
-          {phase === "lobby" && (
-            <div className="card p-8 text-center">
-              <div className="text-3xl mb-3">⏳</div>
-              <p className="text-ink font-medium mb-1">Waiting in lobby</p>
-              <p className="text-sm text-ink-2">
-                {isHost
-                  ? "Press Start race when everyone has joined."
-                  : "The host will start the race shortly."}
-              </p>
-              <div className="mt-4 pt-4 border-t border-surface-3">
-                <p className="text-xs text-ink-3">Share this link with friends:</p>
-                <code className="text-xs text-brand-400 font-mono mt-1 block break-all">
-                  {typeof window !== "undefined"
-                    ? `${window.location.origin}/multiplayer/room/${code}`
-                    : `/multiplayer/room/${code}`}
-                </code>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
