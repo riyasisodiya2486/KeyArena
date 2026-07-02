@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/compete",     label: "Compete"     },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/stats",       label: "My Stats"    },
+  { href: "/insights",    label: "AI Insights" }, 
 ];
 
 export function Navbar() {

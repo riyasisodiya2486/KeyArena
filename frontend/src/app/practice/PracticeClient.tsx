@@ -22,6 +22,7 @@ export default function PracticeClient({ isGuest }: Props) {
   const [passage, setPassage]       = useState(() => getRandomPassage("medium"));
   const [saving,  setSaving]        = useState(false);
   const [savedId, setSavedId]       = useState<string | null>(null);
+  const [saveAttempted, setSaveAttempted] = useState(false);
   // Guest: how many races played this session (to show nudge after 2)
   const [guestRaces, setGuestRaces] = useState(0);
 
@@ -39,12 +40,15 @@ export default function PracticeClient({ isGuest }: Props) {
     setPassage(getRandomPassage(d));
     engine.resetRace();
     setSavedId(null);
+    setSaveAttempted(false);
   }
 
   // ── Next passage ─────────────────────────────────────────────────────────
   // ── Save race to DB ───────────────────────────────────────────────────────
   const saveRace = useCallback(async () => {
     if (!session?.user) return; // guests don't save
+    if (saveAttempted) return;
+    setSaveAttempted(true);
     setSaving(true);
     try {
       const res = await fetch("/api/races", {
@@ -53,8 +57,8 @@ export default function PracticeClient({ isGuest }: Props) {
         body: JSON.stringify({
           mode:         "solo",
           difficulty,
-          wpm:          engine.stats.wpm,
-          rawWpm:       engine.stats.rawWpm,
+          wpm:          Math.max(0, Math.round(engine.stats.wpm)),
+          rawWpm:       Math.max(0, Math.round(engine.stats.rawWpm)),
           accuracy:     engine.stats.accuracy,
           charsTyped:   engine.stats.charsTyped,
           errorsCount:  engine.stats.errorsCount,
@@ -69,30 +73,32 @@ export default function PracticeClient({ isGuest }: Props) {
     } finally {
       setSaving(false);
     }
-  }, [session, difficulty, engine]);
+  }, [session, difficulty, engine, saveAttempted]);
 
   const nextPassage = useCallback(async () => {
-    if (engine.status === "finished" && session?.user && !savedId) {
+    if (engine.status === "finished" && session?.user && !savedId && !saveAttempted) {
       await saveRace();
     }
     setPassage(getRandomPassage(difficulty, passage.id));
     engine.resetRace();
     setSavedId(null);
+    setSaveAttempted(false);
     if (isGuest) setGuestRaces((n) => n + 1);
-  }, [engine, difficulty, passage.id, session, savedId, isGuest, saveRace]);
+  }, [engine, difficulty, passage.id, session, savedId, saveAttempted, isGuest, saveRace]);
 
   // ── Retry ────────────────────────────────────────────────────────────────
   function retryPassage() {
     engine.resetRace();
     setSavedId(null);
+    setSaveAttempted(false);
   }
 
   // Auto-save for signed-in users when race finishes
   useEffect(() => {
-    if (engine.status === "finished" && session?.user && !savedId && !saving) {
+    if (engine.status === "finished" && session?.user && !savedId && !saveAttempted && !saving) {
       saveRace();
     }
-  }, [engine.status, session, savedId, saving, saveRace]);
+  }, [engine.status, session, savedId, saveAttempted, saving, saveRace]);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10">

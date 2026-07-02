@@ -3,12 +3,14 @@ import Fastify from "fastify";
 import { Server as SocketServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
-
+import { competeRoutes }             from "./routes/compete.js";
+import { registerCompetitionSocket } from "./sockets/competition.js";
 import { userRoutes }        from "./routes/users.js";
 import { raceRoutes }        from "./routes/races.js";
 import { leaderboardRoutes } from "./routes/leaderboard.js";
 import { roomRoutes }        from "./routes/rooms.js";
 import { registerRaceSocket } from "./sockets/race.js";
+
 
 const PORT   = Number(process.env.PORT ?? 4000);
 const IS_DEV = process.env.NODE_ENV !== "production";
@@ -19,6 +21,7 @@ await app.register(userRoutes,        { prefix: "/api/users" });
 await app.register(raceRoutes,        { prefix: "/api/races" });
 await app.register(leaderboardRoutes, { prefix: "/api/leaderboard" });
 await app.register(roomRoutes,        { prefix: "/api/rooms" });
+await app.register(competeRoutes, { prefix: "/api/compete" });
 
 app.get("/health", async () => ({ status: "ok", ts: Date.now() }));
 
@@ -38,6 +41,7 @@ const io = new SocketServer(httpServer, {
 });
 
 registerRaceSocket(io);
+registerCompetitionSocket(io);
 
 try {
   await app.ready();

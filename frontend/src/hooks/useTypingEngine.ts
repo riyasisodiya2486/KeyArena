@@ -117,7 +117,13 @@ export function useTypingEngine(passage: string): UseTypingEngineReturn {
 
   // ── Handle input ─────────────────────────────────────────────────────────
   const handleInput = useCallback((value: string) => {
-    if (status !== "racing") return;
+    if (status === "finished") return;
+
+    // The first onChange can fire before startRace state commits;
+    // accept it and move to racing so the first character is not dropped.
+    if (status === "idle") {
+      setStatus("racing");
+    }
 
     const nextChars = Array.from(value);
     const currentChars = Array.from(inputValue);
