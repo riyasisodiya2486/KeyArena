@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/config";
 import { Navbar } from "@/components/layout/Navbar";
 import { InsightsDashboard } from "@/components/insights/InsightsDashboard";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "AI Insights" };
@@ -26,7 +27,9 @@ export default async function InsightsPage() {
               Weakness detection from your keystroke logs + AI-generated drills targeting your exact problem characters.
             </p>
           </div>
-          <InsightsDashboard />
+          <ErrorBoundary fallback={<p className="text-center text-sm text-red-400">AI insights are unavailable right now.</p>}>
+            <InsightsDashboard />
+          </ErrorBoundary>
         </div>
       </main>
     </>

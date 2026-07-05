@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/config";
 import { Navbar } from "@/components/layout/Navbar";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { RoomClient } from "./RoomClient";
 
 interface Props { params: { code: string } }
@@ -20,13 +21,15 @@ export default async function RoomPage({ params }: Props) {
             <div className="w-8 h-8 border-2 border-surface-3 border-t-brand-400 rounded-full animate-spin" />
           </div>
         }>
-          <RoomClient
-            code={params.code.toUpperCase()}
-            userId={session.user.id}
-            username={session.user.username}
-            name={session.user.name ?? session.user.username}
-            image={session.user.image ?? null}
-          />
+          <ErrorBoundary fallback={<p className="px-4 text-center text-sm text-red-400">Room connection unavailable.</p>}>
+            <RoomClient
+              code={params.code.toUpperCase()}
+              userId={session.user.id}
+              username={session.user.username}
+              name={session.user.name ?? session.user.username}
+              image={session.user.image ?? null}
+            />
+          </ErrorBoundary>
         </Suspense>
       </main>
     </>

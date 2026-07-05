@@ -5,13 +5,14 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { Navbar } from "@/components/layout/Navbar";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
 import { TypingDisplay } from "@/components/practice/TypingDisplay";
 import { TypingInput } from "@/components/practice/TypingInput";
 
 interface TopEntry { rank: number; userId: string; wpm: number; }
 
-export default function CompeteRacePage({ params }: { params: { id: string } }) {
+function CompeteRacePageContent({ params }: { params: { id: string } }) {
   const { data: session } = useSession();
   const socketRef         = useRef<Socket | null>(null);
   const sentFinish        = useRef(false);
@@ -255,5 +256,13 @@ export default function CompeteRacePage({ params }: { params: { id: string } }) 
         </div>
       </main>
     </>
+  );
+}
+
+export default function CompeteRacePage({ params }: { params: { id: string } }) {
+  return (
+    <ErrorBoundary fallback={<p className="px-4 py-12 text-center text-sm text-red-400">Competition connection unavailable.</p>}>
+      <CompeteRacePageContent params={params} />
+    </ErrorBoundary>
   );
 }

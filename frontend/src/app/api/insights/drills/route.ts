@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth/config";
+import { redis } from "@/lib/redis";
 
 function buildFallbackDrills(weakChars: string[] = [], bigrams: string[] = []): string[] {
   const chars = weakChars.filter(Boolean).slice(0, 5);
@@ -25,6 +26,17 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Rate limit: 5 drill generations per user per hour
+  const rateLimitKey = `drills:ratelimit:${session.user.id}`;
+  const current = await redis.incr(rateLimitKey);
+  if (current === 1) await redis.expire(rateLimitKey, 3600); // 1 hour TTL
+  if (current > 5) {
+    return NextResponse.json(
+      { error: "Rate limit: max 5 drill generations per hour" },
+      { status: 429 }
+    );
   }
 
   const { weakChars, bigramErrors, avgWpm } = await req.json();

@@ -17,6 +17,21 @@ const IS_DEV = process.env.NODE_ENV !== "production";
 
 const app = Fastify({ logger: IS_DEV });
 
+// Add AFTER the global rate limit registration:
+// @fastify/rate-limit (already registered at 100/min globally)
+
+// Stricter limit on race save endpoint
+app.addHook("onRoute", (routeOptions) => {
+  if (routeOptions.url === "/api/races" && routeOptions.method === "POST") {
+    routeOptions.config = {
+      rateLimit: {
+        max:        30, // 30 race saves per minute per IP
+        timeWindow: "1 minute",
+      },
+    };
+  }
+});
+
 await app.register(userRoutes,        { prefix: "/api/users" });
 await app.register(raceRoutes,        { prefix: "/api/races" });
 await app.register(leaderboardRoutes, { prefix: "/api/leaderboard" });

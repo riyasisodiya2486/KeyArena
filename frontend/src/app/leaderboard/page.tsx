@@ -1,6 +1,7 @@
 import { Suspense }       from "react";
 import { Navbar }         from "@/components/layout/Navbar";
 import { LeaderboardClient } from "@/components/leaderboard/LeaderboardClient";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { getTopN, getUserRank, getUserScore } from "@/lib/redis";
 import { getServerSession }  from "next-auth";
 import { authOptions }       from "@/lib/auth/config";
@@ -13,7 +14,7 @@ import type { Metadata }     from "next";
 export const metadata: Metadata = { title: "Leaderboard" };
 export const dynamic           = "force-dynamic";
 
-// ─── Top-3 podium (server-rendered) ──────────────────────────────────────────
+// Top-3 podium (server-rendered)
 
 async function Podium() {
   const top3 = await getTopN("alltime", 3, 0);
@@ -26,7 +27,7 @@ async function Podium() {
     .where(inArray(users.id, ids));
   const umap = Object.fromEntries(userRows.map((u) => [u.id, u]));
 
-  const medals = ["🥇", "🥈", "🥉"];
+  const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
   const heights = ["h-24", "h-16", "h-12"];
   const order  = [1, 0, 2]; // display: 2nd, 1st, 3rd
 
@@ -76,7 +77,7 @@ async function Podium() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// Page
 
 export default async function LeaderboardPage() {
   return (
@@ -89,7 +90,7 @@ export default async function LeaderboardPage() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold font-mono text-ink mb-2">Leaderboard</h1>
             <p className="text-ink-2 text-sm">
-              Global rankings — updated after every race
+              Global rankings &mdash; updated after every race
             </p>
           </div>
 
@@ -102,8 +103,10 @@ export default async function LeaderboardPage() {
             <Podium />
           </Suspense>
 
-          {/* Full leaderboard (client — tabs, pagination, auto-refresh) */}
-          <LeaderboardClient />
+          {/* Full leaderboard (client - tabs, pagination, auto-refresh) */}
+          <ErrorBoundary fallback={<p className="text-center text-sm text-red-400">Leaderboard unavailable</p>}>
+            <LeaderboardClient />
+          </ErrorBoundary>
         </div>
       </main>
     </>
