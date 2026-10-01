@@ -40,7 +40,11 @@ export default function CompetePage() {
         body:    JSON.stringify({ competitionId: id }),
       });
       if (res.ok) {
-        setJoined(prev => new Set([...prev, id]));
+        setJoined(prev => {
+          const next = new Set(prev);
+          next.add(id);
+          return next;
+        });
         setComps(prev => prev.map(comp =>
           comp.id === id
             ? { ...comp, registrationCount: Math.min(comp.maxParticipants, comp.registrationCount + 1) }

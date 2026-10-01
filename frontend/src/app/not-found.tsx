@@ -10,7 +10,7 @@ export default function NotFound() {
           <div className="font-mono text-8xl font-bold text-brand-400 mb-4">404</div>
           <h1 className="text-2xl font-bold text-ink mb-3">Page not found</h1>
           <p className="text-ink-2 text-sm mb-8">
-            The page you're looking for doesn't exist. Maybe you followed a broken link,
+            The page you&apos;re looking for doesn&apos;t exist. Maybe you followed a broken link,
             or the room code expired.
           </p>
           <div className="flex gap-3 justify-center">

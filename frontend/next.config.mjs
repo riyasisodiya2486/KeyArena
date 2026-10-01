@@ -53,15 +53,7 @@ const nextConfig = {
     ];
   },
 
-  // ── Webpack (bundle optimisation) ─────────────────────────────────────────
-  webpack(config) {
-    // Tree-shake lodash if used
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      lodash: "lodash-es",
-    };
-    return config;
-  },
+  // Keep default module resolution to avoid breaking packages that use lodash deep imports.
 };
 
 export default nextConfig;

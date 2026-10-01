@@ -29,18 +29,23 @@ export async function GET(req: NextRequest) {
   // 3. Hydrate user data from Postgres (Only query if we actually have entries)
   let userMap: Record<string, any> = {};
   if (entries.length > 0) {
-    const userIds  = entries.map((e) => e.value);
-    const userRows = await db
-      .select({
-        id:       users.id,
-        username: users.username,
-        name:     users.name,
-        image:    users.image,
-      })
-      .from(users)
-      .where(inArray(users.id, userIds));
+    const userIds = entries
+      .map((e) => e.value)
+      .filter((value): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
 
-    userMap = Object.fromEntries(userRows.map((u) => [u.id, u]));
+    if (userIds.length > 0) {
+      const userRows = await db
+        .select({
+          id:       users.id,
+          username: users.username,
+          name:     users.name,
+          image:    users.image,
+        })
+        .from(users)
+        .where(inArray(users.id, userIds));
+
+      userMap = Object.fromEntries(userRows.map((u) => [u.id, u]));
+    }
   }
 
   // 4. Get the current user's rank if they're signed in

@@ -131,7 +131,7 @@ export function InsightsDashboard() {
                         flex items-center gap-3">
           <span className="text-xl">📈</span>
           <div>
-            <p className="text-sm font-medium text-green-400">You're improving!</p>
+            <p className="text-sm font-medium text-green-400">You&apos;re improving!</p>
             <p className="text-xs text-ink-2">
               Recent avg <span className="font-mono font-bold">{data.recentAvg}</span> wpm vs
               overall avg <span className="font-mono font-bold">{data.avgWpm}</span> wpm
@@ -249,7 +249,7 @@ export function InsightsDashboard() {
           <div className="bg-surface-2 rounded-xl p-8 text-center">
             <div className="text-3xl mb-3">✨</div>
             <p className="text-sm text-ink-2 mb-1">
-              Click "Generate drills" to get 5 custom sentences
+              Click &quot;Generate drills&quot; to get 5 custom sentences
             </p>
             <p className="text-xs text-ink-3">
               Powered by Claude — targets your specific weak spots

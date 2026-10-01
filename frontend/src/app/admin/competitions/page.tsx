@@ -110,7 +110,7 @@ export default function AdminCompetitionsPage() {
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="KeyRace Open #1"
+                  placeholder="KeyArena Open #1"
                   required
                   className="input w-full"
                 />

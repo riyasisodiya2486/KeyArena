@@ -125,7 +125,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
       <Navbar />
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="text-4xl mb-4">😕</div>
-        <h2 className="text-xl font-bold text-ink mb-2">Can't join competition</h2>
+        <h2 className="text-xl font-bold text-ink mb-2">Can&apos;t join competition</h2>
         <p className="text-sm text-ink-2 mb-6">{error}</p>
         <a href="/compete" className="btn-primary px-6 py-2.5 inline-block">Back to competitions</a>
       </div>

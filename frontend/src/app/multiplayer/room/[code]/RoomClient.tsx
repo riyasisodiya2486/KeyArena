@@ -89,7 +89,7 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="text-4xl mb-4">😕</div>
-        <h2 className="text-xl font-bold text-ink mb-2">Can't join room</h2>
+        <h2 className="text-xl font-bold text-ink mb-2">Can&apos;t join room</h2>
         <p className="text-sm text-ink-2 mb-6">{error || "Room not found or already in progress."}</p>
         <div className="flex gap-3 justify-center">
           <Link href="/multiplayer/join"   className="btn-ghost px-5 py-2.5">Try another code</Link>

@@ -98,12 +98,18 @@ export async function competeRoutes(app: FastifyInstance) {
 
       // Hydrate user data
       const { inArray } = await import("drizzle-orm");
-      const userIds = scores.map(s => s.value);
-      const userRows = await db
-        .select({ id: users.id, username: users.username, name: users.name, image: users.image })
-        .from(users)
-        .where(inArray(users.id, userIds));
-      const umap = Object.fromEntries(userRows.map(u => [u.id, u]));
+      const userIds = scores
+        .map((s) => s.value)
+        .filter((value): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+
+      const userRows = userIds.length > 0
+        ? await db
+            .select({ id: users.id, username: users.username, name: users.name, image: users.image })
+            .from(users)
+            .where(inArray(users.id, userIds))
+        : [];
+
+      const umap = Object.fromEntries(userRows.map((u) => [u.id, u]));
 
       return {
         entries: scores.map((s, i) => ({

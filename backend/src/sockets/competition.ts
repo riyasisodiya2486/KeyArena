@@ -2,6 +2,7 @@ import type { Server, Socket } from "socket.io";
 import { redis } from "../lib/redis.js";
 import { db } from "../lib/db.js";
 import { competitions, competitionRegistrations, raceSessions, passages } from "../lib/schema.js";
+import type { KeystrokeEvent } from "../lib/schema.js";
 import { eq, and } from "drizzle-orm";
 import { submitScore } from "../lib/redis.js";
 
@@ -216,7 +217,7 @@ export function registerCompetitionSocket(io: Server) {
       rawWpm:        number;
       accuracy:      number;
       timeTakenMs:   number;
-      keystrokeLog?: object[];
+      keystrokeLog?: KeystrokeEvent[];
     }, cb: (res: { ok: boolean; rank?: number; error?: string }) => void) => {
       try {
         const room = await getComp(data.competitionId);

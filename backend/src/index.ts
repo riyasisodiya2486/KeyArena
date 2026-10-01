@@ -61,7 +61,7 @@ registerCompetitionSocket(io);
 try {
   await app.ready();
   httpServer.listen({ port: PORT, host: "0.0.0.0" }, () => {
-    console.log(`🚀 KeyRace backend on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 KeyArena backend on http://0.0.0.0:${PORT}`);
   });
 } catch (err) {
   app.log.error(err);

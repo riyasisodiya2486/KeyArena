@@ -20,11 +20,16 @@ async function Podium() {
   const top3 = await getTopN("alltime", 3, 0);
   if (top3.length === 0) return null;
 
-  const ids      = top3.map((e) => e.value);
-  const userRows = await db
-    .select({ id: users.id, username: users.username, name: users.name, image: users.image })
-    .from(users)
-    .where(inArray(users.id, ids));
+  const ids = top3
+    .map((e) => e.value)
+    .filter((value): value is string => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value));
+
+  const userRows = ids.length > 0
+    ? await db
+      .select({ id: users.id, username: users.username, name: users.name, image: users.image })
+      .from(users)
+      .where(inArray(users.id, ids))
+    : [];
   const umap = Object.fromEntries(userRows.map((u) => [u.id, u]));
 
   const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];

@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const body   = await req.json();
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 400 });
   }
 
   const { name, description, scheduledAt, maxParticipants, passageId } = parsed.data;
@@ -69,12 +69,12 @@ export async function POST(req: NextRequest) {
   }
 
   const [comp] = await db.insert(competitions).values({
-    name,
+    title: name,
     description:     description ?? null,
     scheduledAt:     new Date(scheduledAt),
-    maxParticipants,
+    maxPlayers:      maxParticipants,
     passageId:       finalPassageId ?? null,
-    status:          "upcoming",
+    status:          "waiting",
   }).returning();
 
   return NextResponse.json({ competition: comp }, { status: 201 });
