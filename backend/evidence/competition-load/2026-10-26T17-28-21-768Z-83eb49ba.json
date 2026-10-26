@@ -1,0 +1,300 @@
+{
+  "runId": "83eb49ba-3a9a-48b3-ad45-97b6f0f44263",
+  "test": "KeyArena competition 500-participant load test",
+  "startedAt": "2026-10-26T17:28:21.768Z",
+  "target": "http://localhost:4001",
+  "requestedParticipants": 500,
+  "host": {
+    "platform": "Windows_NT 10.0.26300",
+    "arch": "x64",
+    "cpuCount": 32
+  },
+  "phases": {
+    "registration": {
+      "durationMs": 1131.6,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 897.9,
+      "p95Ms": 1035.2,
+      "fullEventResponse": 409
+    },
+    "socketConnect": {
+      "durationMs": 343.3,
+      "connected": 500,
+      "p50Ms": 278,
+      "p95Ms": 282.8,
+      "maxMs": 283.1
+    },
+    "join": {
+      "durationMs": 2019.5,
+      "successfulAcks": 500,
+      "failedAcks": 0,
+      "serverJoinErrors": [],
+      "registeredPlayersInRedis": 500,
+      "p50AckMs": 607.8,
+      "p95AckMs": 1403.2,
+      "maxAckMs": 1997.5
+    },
+    "start": {
+      "countdownRecipients": 500,
+      "raceStartRecipients": 500,
+      "countdownBroadcastMs": 52.8
+    },
+    "progress": {
+      "sent": 500,
+      "clientsReceivingLeaderboardUpdate": 500,
+      "durationMs": 2798,
+      "firstUpdateLatencyMs": 2196,
+      "leaderboardTotal": 500,
+      "leaderboardEntriesReturned": 100
+    },
+    "finish": {
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    }
+  },
+  "checks": [
+    {
+      "name": "Backend health endpoint is reachable",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "Every simulated racer registered through the competition API",
+      "passed": true,
+      "durationMs": 1131.6,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 897.9,
+      "p95Ms": 1035.2,
+      "fullEventResponse": 409
+    },
+    {
+      "name": "Registration database count matches the simulated field",
+      "passed": true,
+      "durationMs": 1131.6,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 897.9,
+      "p95Ms": 1035.2,
+      "fullEventResponse": 409
+    },
+    {
+      "name": "Registration API rejects an extra racer when the competition is full",
+      "passed": true,
+      "durationMs": 1131.6,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 897.9,
+      "p95Ms": 1035.2,
+      "fullEventResponse": 409
+    },
+    {
+      "name": "All simulated socket clients connected",
+      "passed": true,
+      "durationMs": 343.3,
+      "connected": 500,
+      "p50Ms": 278,
+      "p95Ms": 282.8,
+      "maxMs": 283.1
+    },
+    {
+      "name": "Every registered racer received a successful join acknowledgement",
+      "passed": true,
+      "durationMs": 2019.5,
+      "successfulAcks": 500,
+      "failedAcks": 0,
+      "serverJoinErrors": [],
+      "registeredPlayersInRedis": 500,
+      "p50AckMs": 607.8,
+      "p95AckMs": 1403.2,
+      "maxAckMs": 1997.5
+    },
+    {
+      "name": "Redis room retained every joined racer",
+      "passed": true,
+      "durationMs": 2019.5,
+      "successfulAcks": 500,
+      "failedAcks": 0,
+      "serverJoinErrors": [],
+      "registeredPlayersInRedis": 500,
+      "p50AckMs": 607.8,
+      "p95AckMs": 1403.2,
+      "maxAckMs": 1997.5
+    },
+    {
+      "name": "Every racer received the countdown event",
+      "passed": true,
+      "countdownRecipients": 500,
+      "raceStartRecipients": 500,
+      "countdownBroadcastMs": 52.8
+    },
+    {
+      "name": "Every racer received the race-start event",
+      "passed": true,
+      "countdownRecipients": 500,
+      "raceStartRecipients": 500,
+      "countdownBroadcastMs": 52.8
+    },
+    {
+      "name": "All connected racers received live leaderboard updates",
+      "passed": true,
+      "sent": 500,
+      "clientsReceivingLeaderboardUpdate": 500,
+      "durationMs": 2798,
+      "firstUpdateLatencyMs": 2196,
+      "leaderboardTotal": 500,
+      "leaderboardEntriesReturned": 100
+    },
+    {
+      "name": "Live leaderboard includes every racer who reported progress",
+      "passed": true,
+      "sent": 500,
+      "clientsReceivingLeaderboardUpdate": 500,
+      "durationMs": 2798,
+      "firstUpdateLatencyMs": 2196,
+      "leaderboardTotal": 500,
+      "leaderboardEntriesReturned": 100
+    },
+    {
+      "name": "Every racer finish was accepted",
+      "passed": true,
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    },
+    {
+      "name": "Every connected racer received the final leaderboard event",
+      "passed": true,
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    },
+    {
+      "name": "Final leaderboard contains all finished racers",
+      "passed": true,
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    },
+    {
+      "name": "Leaderboard endpoint returns the top racers in WPM order",
+      "passed": true,
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    },
+    {
+      "name": "A race result was saved for every racer",
+      "passed": true,
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    },
+    {
+      "name": "Competition status changed to finished",
+      "passed": true,
+      "durationMs": 6836.4,
+      "acknowledged": 500,
+      "failed": 0,
+      "finalLeaderboardEventsReceived": 500,
+      "missingFinalLeaderboardEvents": 0,
+      "finalLeaderboardTotal": 500,
+      "finalLeaderboardEntriesReturned": 100,
+      "topHundredOrderedByWpm": true,
+      "savedRaceSessions": 500,
+      "competitionStatus": "finished"
+    },
+    {
+      "name": "Temporary test records and scores were removed",
+      "passed": true,
+      "verified": true,
+      "temporaryCompetitionsRemaining": 0,
+      "temporaryUsersRemaining": 0,
+      "temporaryRegistrationsRemaining": 0,
+      "temporaryRaceSessionsRemaining": 0,
+      "temporarySocketMapsRemaining": 0,
+      "temporaryRedisKeysRemaining": 0,
+      "temporaryGlobalLeaderboardEntriesRemaining": 0
+    }
+  ],
+  "limitations": [
+    "This run measures the configured local environment; production capacity depends on its server, database, Redis, network, and deployment settings.",
+    "Simulated participants use separate authenticated-by-registration socket identities, not real browsers or geographically distributed networks."
+  ],
+  "status": "passed",
+  "cleanup": {
+    "verified": true,
+    "temporaryCompetitionsRemaining": 0,
+    "temporaryUsersRemaining": 0,
+    "temporaryRegistrationsRemaining": 0,
+    "temporaryRaceSessionsRemaining": 0,
+    "temporarySocketMapsRemaining": 0,
+    "temporaryRedisKeysRemaining": 0,
+    "temporaryGlobalLeaderboardEntriesRemaining": 0
+  },
+  "backendProcess": {
+    "pid": 2568,
+    "samples": 3,
+    "cpuSecondsStart": 2.125,
+    "cpuSecondsEnd": 10.609375,
+    "cpuSecondsUsed": 8.48,
+    "averageCpuPercentOfOneCore": 40.3,
+    "workingSetPeakMiB": 295.8,
+    "workingSetFinalMiB": 295.8
+  },
+  "finishedAt": "2026-10-26T17:28:42.819Z",
+  "durationMs": 21051,
+  "eventLoopDelayMs": {
+    "p50": 30.28,
+    "p95": 31.74,
+    "max": 74.25
+  }
+}

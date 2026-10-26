@@ -134,8 +134,12 @@ export const competitions = pgTable("competitions", {
   id:              uuid("id").primaryKey().defaultRandom(),
   title:           text("title").notNull(),
   description:     text("description"),
+  reward:          text("reward"),
   passageId:       uuid("passage_id").references(() => passages.id),
   hostId:          uuid("host_id").references(() => users.id),
+  // Required legacy event window columns still present in existing databases.
+  startTime:       timestamp("start_time", { mode: "date" }).notNull(),
+  endTime:         timestamp("end_time", { mode: "date" }).notNull(),
   status:          raceStatusEnum("status").notNull().default("waiting"),
   maxPlayers:      integer("max_players").notNull().default(500),
   registeredCount: integer("registered_count").notNull().default(0),

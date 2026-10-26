@@ -8,19 +8,42 @@ interface TypingDisplayProps {
   chars: string[];
   charStates: CharState[];
   cursorIndex: number;
+  windowStartIndex?: number;
 }
 
-export function TypingDisplay({ chars, charStates, cursorIndex }: TypingDisplayProps) {
+export function TypingDisplay({ chars, charStates, cursorIndex, windowStartIndex = 0 }: TypingDisplayProps) {
+  const viewportRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLSpanElement>(null);
+  const previousWindowRef = useRef(windowStartIndex);
 
   // Keep cursor in view as user scrolls through long passages
   useEffect(() => {
-    cursorRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [cursorIndex]);
+    const cursor = cursorRef.current;
+    const viewport = viewportRef.current;
+    if (!cursor || !viewport) return;
+
+    const cursorRect = cursor.getBoundingClientRect();
+    const viewportRect = viewport.getBoundingClientRect();
+    const bottomLimit = viewportRect.bottom - 76;
+    const topLimit = viewportRect.top + 24;
+    if (cursorRect.bottom > bottomLimit) {
+      viewport.scrollTop += cursorRect.top - topLimit;
+    } else if (cursorRect.top < topLimit) {
+      viewport.scrollTop -= topLimit - cursorRect.top;
+    }
+  }, [cursorIndex, chars.length, chars[cursorIndex]]);
+
+  useEffect(() => {
+    if (previousWindowRef.current !== windowStartIndex) {
+      previousWindowRef.current = windowStartIndex;
+      if (viewportRef.current) viewportRef.current.scrollTop = 0;
+    }
+  }, [windowStartIndex]);
 
   return (
     <div
-      className="relative font-mono text-[1.1rem] leading-[2.2] tracking-wide
+      ref={viewportRef}
+      className="ka-typing-display relative whitespace-pre-wrap break-words font-mono text-[1.1rem] leading-[2.2] tracking-wide
                  bg-surface-2 rounded-xl px-6 py-5 select-none overflow-hidden
                  border border-surface-3"
       style={{ minHeight: "140px", maxHeight: "220px", overflowY: "auto" }}
@@ -52,7 +75,7 @@ export function TypingDisplay({ chars, charStates, cursorIndex }: TypingDisplayP
                            rounded-full animate-blink"
               />
             )}
-            {char === " " ? "\u00A0" : char}
+            {char === "\n" ? <br /> : char}
           </span>
         );
       })}

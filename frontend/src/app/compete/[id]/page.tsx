@@ -6,17 +6,26 @@ import { useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { Navbar } from "@/components/layout/Navbar";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { AppIcon } from "@/components/ui/AppIcon";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
 import { TypingDisplay } from "@/components/practice/TypingDisplay";
 import { TypingInput } from "@/components/practice/TypingInput";
 
-interface TopEntry { rank: number; userId: string; wpm: number; }
+interface TopEntry { rank: number; userId: string; username?: string; wpm: number; }
+interface JoinedRoom {
+  status: "waiting" | "countdown" | "racing" | "finished";
+  countdownEnd?: number | null;
+  passageText: string;
+  players?: Record<string, { userId: string; username: string; wpm: number }>;
+}
+interface CompetitionMeta { id: string; name?: string; title?: string; reward?: string | null; }
 
 function CompeteRacePageContent({ params }: { params: { id: string } }) {
   const { data: session } = useSession();
   const socketRef         = useRef<Socket | null>(null);
   const sentFinish        = useRef(false);
   const lastProgress      = useRef(0);
+  const countdownEndRef   = useRef<number | null>(null);
 
   const [phase,        setPhase]        = useState<"connecting"|"waiting"|"countdown"|"racing"|"finished">("connecting");
   const [countdown,    setCountdown]    = useState(3);
@@ -25,8 +34,30 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
   const [myRank,       setMyRank]       = useState<number | null>(null);
   const [passageText,  setPassageText]  = useState("");
   const [error,        setError]        = useState("");
+  const [competitionName, setCompetitionName] = useState("");
+  const [competitionReward, setCompetitionReward] = useState<string | null>(null);
 
   const engine = useTypingEngine(passageText);
+  const startRaceRef = useRef(engine.startRace);
+  const [competitionFinished, setCompetitionFinished] = useState(false);
+
+  useEffect(() => {
+    startRaceRef.current = engine.startRace;
+  }, [engine.startRace]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/compete")
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { competitions?: CompetitionMeta[] } | null) => {
+        const competition = data?.competitions?.find((item) => item.id === params.id);
+        if (!active || !competition) return;
+        setCompetitionName(competition.name ?? competition.title ?? "");
+        setCompetitionReward(competition.reward ?? null);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [params.id]);
 
   useEffect(() => {
     if (!session?.user) return;
@@ -44,11 +75,25 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
         username:      session.user.username,
         name:          session.user.name ?? session.user.username,
         image:         session.user.image ?? null,
-      }, (res: { ok: boolean; room?: { passageText: string; status: string }; playerCount?: number; error?: string }) => {
+      }, (res: { ok: boolean; room?: JoinedRoom; playerCount?: number; error?: string }) => {
         if (!res.ok) { setError(res.error ?? "Failed to join"); return; }
         setPassageText(res.room?.passageText ?? "");
         setTotalPlayers(res.playerCount ?? 0);
-        setPhase(res.room?.status === "racing" ? "racing" : "waiting");
+        const initialLeaderboard = Object.values(res.room?.players ?? {})
+          .sort((a, b) => b.wpm - a.wpm)
+          .slice(0, 25)
+          .map((player, index) => ({ rank: index + 1, userId: player.userId, username: player.username, wpm: player.wpm }));
+        setTop25(initialLeaderboard);
+        if (res.room?.status === "racing") {
+          setPhase("racing");
+        } else if (res.room?.status === "countdown") {
+          countdownEndRef.current = res.room.countdownEnd ?? Date.now();
+          const remaining = Math.max(1, Math.ceil(((res.room.countdownEnd ?? Date.now()) - Date.now()) / 1000));
+          setCountdown(remaining);
+          setPhase("countdown");
+        } else {
+          setPhase("waiting");
+        }
       });
     });
 
@@ -58,21 +103,23 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
     s.on("countdown_start", (d: { countdownEnd: number; passage: string }) => {
       setPassageText(d.passage);
+      countdownEndRef.current = d.countdownEnd;
       setPhase("countdown");
-      let rem = Math.ceil((d.countdownEnd - Date.now()) / 1000);
-      setCountdown(rem);
-      const t = setInterval(() => {
-        rem -= 1;
-        setCountdown(Math.max(0, rem));
-        if (rem <= 0) clearInterval(t);
-      }, 1000);
+      setCountdown(Math.max(0, Math.ceil((d.countdownEnd - Date.now()) / 1000)));
     });
 
-    s.on("race_start", () => { setPhase("racing"); engine.startRace(); });
+    s.on("race_start", () => { setPhase("racing"); startRaceRef.current(); });
 
     s.on("comp_leaderboard_update", (d: { top25: TopEntry[]; totalPlayers: number }) => {
       setTop25(d.top25);
       setTotalPlayers(d.totalPlayers);
+    });
+
+    s.on("competition_finished", (d: { top25: TopEntry[]; totalPlayers: number }) => {
+      setTop25(d.top25);
+      setTotalPlayers(d.totalPlayers);
+      setCompetitionFinished(true);
+      setPhase("finished");
     });
 
     s.on("comp_player_finished", (d: { userId: string; rank: number }) => {
@@ -81,6 +128,15 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
     return () => { s.disconnect(); };
   }, [session]);
+
+  useEffect(() => {
+    if (phase !== "countdown") return;
+    const timer = setInterval(() => {
+      const end = countdownEndRef.current ?? Date.now();
+      setCountdown(Math.max(0, Math.ceil((end - Date.now()) / 1000)));
+    }, 200);
+    return () => clearInterval(timer);
+  }, [phase]);
 
   // Throttled progress — 500ms for large events
   useEffect(() => {
@@ -124,7 +180,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
     <>
       <Navbar />
       <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="text-4xl mb-4">😕</div>
+        <AppIcon name="help" size={30} className="mx-auto mb-4 text-brand-400" />
         <h2 className="text-xl font-bold text-ink mb-2">Can&apos;t join competition</h2>
         <p className="text-sm text-ink-2 mb-6">{error}</p>
         <a href="/compete" className="btn-primary px-6 py-2.5 inline-block">Back to competitions</a>
@@ -139,8 +195,9 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
         <div className="max-w-5xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-xl font-bold font-mono text-ink">Competition</h1>
+              <h1 className="text-xl font-bold font-mono text-ink">{competitionName || "Competition"}</h1>
               <p className="text-xs text-ink-3 mt-0.5">{totalPlayers.toLocaleString()} participants</p>
+              {competitionReward && <p className="text-xs text-brand-400 mt-1"><strong>Reward:</strong> {competitionReward}</p>}
             </div>
             {myRank && (
               <div className="text-right">
@@ -159,7 +216,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
           {phase === "waiting" && (
             <div className="card p-10 text-center">
-              <div className="text-4xl mb-4">⏳</div>
+              <AppIcon name="live" size={30} className="mx-auto mb-4 text-brand-400" />
               <h2 className="text-xl font-semibold text-ink mb-2">Waiting for competition to start</h2>
               <p className="text-ink-2 text-sm">{totalPlayers.toLocaleString()} participants joined</p>
               <div className="flex items-center justify-center gap-2 mt-4">
@@ -216,7 +273,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
                 {(engine.status === "finished" || phase === "finished") && (
                   <div className="card p-6 text-center">
-                    <div className="text-3xl mb-2">{myRank === 1 ? "🥇" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : "🏁"}</div>
+                    <div className="text-3xl mb-2"><AppIcon name={myRank && myRank <= 3 ? "award" : "flag"} size={28} className="mx-auto text-brand-400" /></div>
                     <h2 className="text-xl font-bold text-ink mb-1">
                       {myRank ? `You finished #${myRank.toLocaleString()}!` : "Race complete!"}
                     </h2>
@@ -231,7 +288,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
               <div className="card overflow-hidden h-fit">
                 <div className="px-4 py-3 border-b border-surface-3">
-                  <p className="text-xs font-medium text-ink-2 uppercase tracking-wider">Live top 25</p>
+                  <p className="text-xs font-medium text-ink-2 uppercase tracking-wider">{competitionFinished ? "Final leaderboard" : "Live top 25"}</p>
                   <p className="text-xs text-ink-3">{totalPlayers.toLocaleString()} total racers</p>
                 </div>
                 <div className="overflow-y-auto" style={{ maxHeight: "420px" }}>
@@ -241,7 +298,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
                         entry.userId === session?.user?.id ? "bg-brand-400/5" : ""}`}>
                       <span className="font-mono text-xs text-ink-3 w-6 text-right">{entry.rank}</span>
                       <span className={`flex-1 truncate text-xs ${entry.userId === session?.user?.id ? "text-brand-400 font-medium" : "text-ink-2"}`}>
-                        {entry.userId === session?.user?.id ? "you" : `racer_${entry.rank}`}
+                        {entry.userId === session?.user?.id ? "you" : entry.username ?? `racer_${entry.rank}`}
                       </span>
                       <span className="font-mono text-xs font-bold text-ink">{entry.wpm}</span>
                     </div>

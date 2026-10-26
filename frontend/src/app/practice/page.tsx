@@ -7,12 +7,19 @@ export const metadata: Metadata = { title: "Practice" };
 
 // No redirect — guests can practice freely.
 // PracticeClient handles the guest vs signed-in difference.
-export default async function PracticePage() {
+const difficulties = ["easy", "medium", "hard", "code"] as const;
+
+export default async function PracticePage({
+  searchParams,
+}: {
+  searchParams?: { difficulty?: string };
+}) {
   const session = await getServerSession(authOptions);
+  const initialDifficulty = difficulties.find((difficulty) => difficulty === searchParams?.difficulty) ?? "medium";
 
   return (
     <main className="min-h-screen bg-surface">
-      <PracticeClient isGuest={!session?.user} />
+      <PracticeClient isGuest={!session?.user} initialDifficulty={initialDifficulty} />
     </main>
   );
 }

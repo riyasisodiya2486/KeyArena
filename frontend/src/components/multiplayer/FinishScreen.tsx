@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Standing } from "@/types/race";
+import { AppIcon } from "@/components/ui/AppIcon";
 
-const MEDALS = ["🥇","🥈","🥉"];
 const PODIUM_COLORS = ["#E6A817","#A8A7A3","#CD7F32"];
 
 interface FinishScreenProps {
@@ -18,9 +18,9 @@ export function FinishScreen({ standings, myUserId, roomCode, onRematch }: Finis
   const me = standings.find(s => s.userId === myUserId);
 
   const winMsg: Record<number, string> = {
-    1: "You won! 🔥",
-    2: "So close! 🥈",
-    3: "Third place! 🥉",
+    1: "You won!",
+    2: "So close!",
+    3: "Third place!",
   };
 
   return (
@@ -29,7 +29,7 @@ export function FinishScreen({ standings, myUserId, roomCode, onRematch }: Finis
       {/* Hero */}
       <div className="text-center mb-8">
         <div className="text-5xl mb-3">
-          {me?.rank && me.rank <= 3 ? MEDALS[me.rank - 1] : "🏁"}
+          {me?.rank && me.rank <= 3 ? <AppIcon name="award" size={38} className="mx-auto text-amber-300" /> : <AppIcon name="flag" size={32} className="mx-auto text-brand-400" />}
         </div>
         <h1 className="text-3xl font-bold font-mono text-ink mb-1">
           {me?.rank ? (winMsg[me.rank] ?? `#${me.rank} finish`) : "Race over!"}
@@ -59,7 +59,7 @@ export function FinishScreen({ standings, myUserId, roomCode, onRematch }: Finis
               {/* Medal / rank */}
               <div className="w-8 text-center flex-shrink-0">
                 {i < 3
-                  ? <span className="text-xl">{MEDALS[i]}</span>
+                  ? <AppIcon name="award" className={i === 0 ? "text-amber-300" : i === 1 ? "text-slate-300" : "text-orange-400"} />
                   : <span className="font-mono text-sm text-ink-3">#{s.rank}</span>}
               </div>
 

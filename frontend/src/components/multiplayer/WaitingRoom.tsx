@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import type { Player, RaceRoom } from "@/types/race";
+import { AppIcon } from "@/components/ui/AppIcon";
+import { useEffect, useState } from "react";
 
 interface WaitingRoomProps {
   room:      RaceRoom;
@@ -18,16 +20,15 @@ const PLAYER_COLORS = ["#E8593C","#4A8FDD","#1D9E75","#9B7FE8"];
 export function WaitingRoom({
   room, players, myUserId, isHost, onStart, onCopy, copied
 }: WaitingRoomProps) {
-  const roomUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/multiplayer/room/${room.code}`
-    : `/multiplayer/room/${room.code}`;
+  const [roomUrl, setRoomUrl] = useState(`/multiplayer/room/${room.code}`);
+  useEffect(() => setRoomUrl(`${window.location.origin}/multiplayer/room/${room.code}`), [room.code]);
 
   return (
     <div className="max-w-xl mx-auto px-4 py-10">
 
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="text-4xl mb-3">🏁</div>
+        <AppIcon name="flag" size={28} className="mx-auto mb-3 text-brand-400" />
         <h1 className="text-2xl font-bold font-mono text-ink mb-1">Waiting for players</h1>
         <p className="text-ink-2 text-sm">Share the code and race when ready</p>
       </div>
@@ -42,7 +43,7 @@ export function WaitingRoom({
           onClick={onCopy}
           className="btn-ghost text-sm px-5 py-2 w-full"
         >
-          {copied ? "✓ Link copied!" : "📋 Copy invite link"}
+          {copied ? "✓ Link copied!" : " Copy invite link"}
         </button>
         <p className="text-xs text-ink-3 mt-3 break-all">{roomUrl}</p>
       </div>

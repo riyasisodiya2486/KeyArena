@@ -4,6 +4,7 @@ import { formatTime, calcConsistency, getTopBigramErrors } from "@/lib/wpm";
 import type { TypingStats } from "@/hooks/useTypingEngine";
 import type { KeystrokeEvent } from "@/lib/db/schema";
 import type { Difficulty } from "@/components/practice/DifficultySelector";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 interface ResultsProps {
   stats: TypingStats;
@@ -15,12 +16,12 @@ interface ResultsProps {
 }
 
 function wpmGrade(wpm: number): { label: string; color: string } {
-  if (wpm >= 130) return { label: "Legendary 🔥",  color: "text-red-400" };
-  if (wpm >= 100) return { label: "Expert ⚡",      color: "text-yellow-400" };
-  if (wpm >= 75)  return { label: "Advanced 🚀",    color: "text-brand-400" };
-  if (wpm >= 50)  return { label: "Intermediate 💪", color: "text-blue-400" };
-  if (wpm >= 30)  return { label: "Developing 📈",  color: "text-green-400" };
-  return             { label: "Beginner 🌱",         color: "text-ink-2" };
+  if (wpm >= 130) return { label: "Legendary",  color: "text-red-400" };
+  if (wpm >= 100) return { label: "Expert",     color: "text-yellow-400" };
+  if (wpm >= 75)  return { label: "Advanced",   color: "text-brand-400" };
+  if (wpm >= 50)  return { label: "Intermediate", color: "text-blue-400" };
+  if (wpm >= 30)  return { label: "Developing", color: "text-green-400" };
+  return             { label: "Beginner",       color: "text-ink-2" };
 }
 
 export function ResultsScreen({
@@ -38,7 +39,7 @@ export function ResultsScreen({
           {stats.wpm}
         </div>
         <div className="text-ink-2 text-sm mb-2">words per minute</div>
-        <div className={`text-base font-medium ${grade.color}`}>{grade.label}</div>
+        <div className={`text-base font-medium ${grade.color}`}><AppIcon name={stats.wpm >= 100 ? "flame" : stats.wpm >= 50 ? "gauge" : "growth"} size={16} className="inline mr-2" />{grade.label}</div>
       </div>
 
       {/* ── Stat grid ──────────────────────────────────────────────── */}

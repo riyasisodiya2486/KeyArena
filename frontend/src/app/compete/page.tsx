@@ -5,15 +5,18 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { format } from "date-fns";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 interface Competition {
   id:                string;
   name:              string;
   description:       string | null;
+  reward:            string | null;
   scheduledAt:       string;
   maxParticipants:   number;
   registrationCount: number;
   status:            string;
+  isRegistered?:     boolean;
 }
 
 export default function CompetePage() {
@@ -26,7 +29,11 @@ export default function CompetePage() {
   useEffect(() => {
     fetch("/api/compete")
       .then(r => r.json())
-      .then(d => setComps(d.competitions ?? []))
+      .then(d => {
+        const competitions: Competition[] = d.competitions ?? [];
+        setComps(competitions);
+        setJoined(new Set(competitions.filter((competition) => competition.isRegistered).map((competition) => competition.id)));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -47,7 +54,7 @@ export default function CompetePage() {
         });
         setComps(prev => prev.map(comp =>
           comp.id === id
-            ? { ...comp, registrationCount: Math.min(comp.maxParticipants, comp.registrationCount + 1) }
+          ? { ...comp, isRegistered: true, registrationCount: Math.min(comp.maxParticipants, comp.registrationCount + 1) }
             : comp
         ));
       }
@@ -65,12 +72,14 @@ export default function CompetePage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-surface">
-        <div className="max-w-3xl mx-auto px-4 py-10">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold font-mono text-ink mb-2">Competitions</h1>
-            <p className="text-ink-2 text-sm">Large-scale events — up to 500 racers simultaneously</p>
-          </div>
+      <main className="ka-route-page min-h-screen">
+        <div className="ka-route-shell">
+          <header className="ka-route-hero">
+            <p className="ka-route-kicker">KEYARENA / OFFICIAL EVENTS</p>
+            <h1>Competitions<span>.</span></h1>
+            <p>Scheduled races for the whole field. Register, race, and earn your place on the board.</p>
+          </header>
+          <aside className="ka-host-note"><strong>Who can host?</strong><span>Official competitions are scheduled by KeyArena admins. Any signed-in racer can host a private race room from Multiplayer.</span><Link href="/multiplayer/create">Host a private race <span aria-hidden="true">↗</span></Link></aside>
 
           {loading && (
             <div className="flex items-center justify-center h-40 gap-3">
@@ -81,10 +90,10 @@ export default function CompetePage() {
 
           {!loading && comps.length === 0 && (
             <div className="card p-10 text-center">
-              <div className="text-4xl mb-3">🏆</div>
+              <div className="text-4xl mb-3 text-brand-400">—</div>
               <h2 className="text-lg font-semibold text-ink mb-2">No competitions yet</h2>
               <p className="text-sm text-ink-2">
-                Competitions are created by admins. Check back soon!
+                Official competitions are created by KeyArena admins. You can host a private room any time.
               </p>
             </div>
           )}
@@ -92,7 +101,7 @@ export default function CompetePage() {
           <div className="space-y-4">
             {comps.map(comp => {
               const isFull    = comp.registrationCount >= comp.maxParticipants;
-              const isJoined  = joined.has(comp.id);
+              const isJoined  = joined.has(comp.id) || Boolean(comp.isRegistered);
               const isLive    = comp.status === "live";
               const pctBase   = Math.round((comp.registrationCount / comp.maxParticipants) * 100);
               const pct       = comp.registrationCount > 0 ? Math.max(1, pctBase) : 0;
@@ -104,14 +113,17 @@ export default function CompetePage() {
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h2 className="font-semibold text-ink">{comp.name}</h2>
                         <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${statusColor[comp.status] ?? statusColor.upcoming}`}>
-                          {isLive ? "🔴 LIVE" : comp.status}
+                          {isLive ? <><AppIcon name="live" size={12} className="inline mr-1" />LIVE</> : comp.status}
                         </span>
                       </div>
                       {comp.description && (
                         <p className="text-sm text-ink-2">{comp.description}</p>
                       )}
+                      {comp.reward && (
+                        <p className="text-sm text-brand-400 mt-1"><strong>Reward:</strong> {comp.reward}</p>
+                      )}
                       <p className="text-xs text-ink-3 mt-1">
-                        📅 {format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")}
+                        <AppIcon name="calendar" size={13} className="inline mr-1.5" />{format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")}
                       </p>
                     </div>
 

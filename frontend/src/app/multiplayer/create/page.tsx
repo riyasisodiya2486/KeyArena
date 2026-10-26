@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 export default function CreateRoomPage() {
   const { data: session } = useSession();

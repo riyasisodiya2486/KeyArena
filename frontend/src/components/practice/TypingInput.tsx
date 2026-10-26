@@ -8,9 +8,13 @@ interface TypingInputProps {
   status: EngineStatus;
   onChange: (value: string) => void;
   onStart: () => void;
+  onCancel?: () => void;
+  captureGlobalHotkeys?: boolean;
+  startOnClick?: boolean;
+  allowNewlines?: boolean;
 }
 
-export function TypingInput({ value, status, onChange, onStart }: TypingInputProps) {
+export function TypingInput({ value, status, onChange, onStart, onCancel, captureGlobalHotkeys = false, startOnClick = true, allowNewlines = false }: TypingInputProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
   // Auto-focus when race starts
@@ -20,6 +24,26 @@ export function TypingInput({ value, status, onChange, onStart }: TypingInputPro
     }
   }, [status]);
 
+  // Practice can start from the first key pressed anywhere on the page. Do not
+  // intercept keys while a link, form control, or other button has focus.
+  useEffect(() => {
+    if (!captureGlobalHotkeys || status !== "idle") return;
+
+    function handlePageKeyDown(event: KeyboardEvent) {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.isContentEditable || target.closest("input, textarea, select, button, a, summary")) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.key.length !== 1) return;
+
+      event.preventDefault();
+      ref.current?.focus();
+      onChange(event.key);
+    }
+
+    document.addEventListener("keydown", handlePageKeyDown);
+    return () => document.removeEventListener("keydown", handlePageKeyDown);
+  }, [captureGlobalHotkeys, status, onChange]);
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     // Prevent tab from stealing focus
     if (e.key === "Tab") {
@@ -28,14 +52,15 @@ export function TypingInput({ value, status, onChange, onStart }: TypingInputPro
     }
     // Escape = give up / reset (handled by parent)
     if (e.key === "Escape") {
-      ref.current?.blur();
+      if (onCancel) onCancel();
+      else ref.current?.blur();
       return;
     }
   }
 
   function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     // Strip newlines — Enter key shouldn't add a line
-    const val = e.target.value.replace(/\n/g, "");
+    const val = allowNewlines ? e.target.value : e.target.value.replace(/\n/g, "");
 
     if (status === "idle") {
       onStart();
@@ -58,8 +83,8 @@ export function TypingInput({ value, status, onChange, onStart }: TypingInputPro
         autoCapitalize="off"
         autoComplete="off"
         data-gramm="false"
-        className="absolute inset-0 w-full h-full opacity-0 cursor-default resize-none
-                   focus:outline-none z-10"
+        className={`absolute inset-0 w-full h-full opacity-0 cursor-default resize-none
+                   focus:outline-none z-10 ${status === "idle" ? "pointer-events-none" : "pointer-events-auto"}`}
         aria-label="Typing input"
       />
 
@@ -67,8 +92,8 @@ export function TypingInput({ value, status, onChange, onStart }: TypingInputPro
       {status === "idle" && (
         <button
           onClick={() => {
-            onStart();
-            setTimeout(() => ref.current?.focus(), 50);
+            if (startOnClick) onStart();
+            ref.current?.focus();
           }}
           className="w-full flex items-center justify-center gap-2
                      bg-surface-2 border border-dashed border-surface-4
@@ -77,7 +102,7 @@ export function TypingInput({ value, status, onChange, onStart }: TypingInputPro
                      transition-all group"
         >
           <span className="text-lg group-hover:animate-bounce">⌨</span>
-          Click here or press any key to start typing
+          {captureGlobalHotkeys ? "Click to focus, or press any key to start" : "Click here to start typing"}
         </button>
       )}
 

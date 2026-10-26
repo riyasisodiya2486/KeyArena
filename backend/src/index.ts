@@ -45,7 +45,8 @@ const httpServer = app.server;
 
 const pubClient = createClient({ url: process.env.REDIS_URL ?? "redis://localhost:6379" });
 const subClient = pubClient.duplicate();
-await Promise.all([pubClient.connect(), subClient.connect()]);
+const competitionCommandClient = pubClient.duplicate();
+await Promise.all([pubClient.connect(), subClient.connect(), competitionCommandClient.connect()]);
 
 const io = new SocketServer(httpServer, {
   cors:    { origin: process.env.FRONTEND_URL ?? "http://localhost:3000", credentials: true },
@@ -56,7 +57,23 @@ const io = new SocketServer(httpServer, {
 });
 
 registerRaceSocket(io);
-registerCompetitionSocket(io);
+const competitionControl = registerCompetitionSocket(io);
+await competitionCommandClient.subscribe("competition:start", async (message) => {
+  try {
+    const command = JSON.parse(message) as { competitionId: string; countdownEnd?: number; passage?: string };
+    await competitionControl.startCompetitionNow(command.competitionId, command.countdownEnd, command.passage);
+  } catch (error) {
+    console.error("[competition:start] invalid start command", error);
+  }
+});
+await competitionCommandClient.subscribe("competition:finish", async (message) => {
+  try {
+    const command = JSON.parse(message) as { competitionId: string };
+    await competitionControl.finishCompetitionNow(command.competitionId);
+  } catch (error) {
+    console.error("[competition:finish] invalid finish command", error);
+  }
+});
 
 try {
   await app.ready();

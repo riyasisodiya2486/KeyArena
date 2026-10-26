@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import Link from "next/link";
+import { ArrowUpRight, Users, Plus, DoorOpen } from "lucide-react";
 
 export const metadata = { title: "Multiplayer" };
 
@@ -7,28 +8,28 @@ export default function MultiplayerPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-surface flex items-center justify-center p-4">
-        <div className="w-full max-w-lg text-center">
-          <h1 className="text-3xl font-bold font-mono text-ink mb-3">Multiplayer</h1>
-          <p className="text-ink-2 mb-10">Race up to 4 friends in real-time. Share a code, type fast, win.</p>
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/multiplayer/create"
-              className="card p-6 hover:border-brand-400/40 hover:bg-surface-2 transition-all group text-left">
-              <div className="text-3xl mb-3">⚡</div>
-              <h2 className="font-semibold text-ink group-hover:text-brand-400 transition-colors mb-1">
-                Create room
-              </h2>
-              <p className="text-xs text-ink-3">Host a race and invite friends</p>
+      <main className="ka-route-page min-h-screen">
+        <div className="ka-route-shell">
+          <header className="ka-route-hero">
+            <p className="ka-route-kicker">KEYARENA / LIVE ROOMS</p>
+            <h1>Race your<br /><em>people.</em></h1>
+            <p>Create a private room, share its code, and race up to four players in real time.</p>
+          </header>
+          <div className="ka-action-grid">
+            <Link href="/multiplayer/create" className="ka-action-card">
+              <span className="ka-action-icon"><Plus size={19} /></span>
+              <small>01 / HOST</small><h2>Create a room</h2>
+              <p>Signed-in racers can host a room and choose the race setup.</p>
+              <span className="ka-card-link">Create room <ArrowUpRight size={15} /></span>
             </Link>
-            <Link href="/multiplayer/join"
-              className="card p-6 hover:border-brand-400/40 hover:bg-surface-2 transition-all group text-left">
-              <div className="text-3xl mb-3">🔗</div>
-              <h2 className="font-semibold text-ink group-hover:text-brand-400 transition-colors mb-1">
-                Join room
-              </h2>
-              <p className="text-xs text-ink-3">Enter a 6-character invite code</p>
+            <Link href="/multiplayer/join" className="ka-action-card">
+              <span className="ka-action-icon"><DoorOpen size={19} /></span>
+              <small>02 / JOIN</small><h2>Enter a room</h2>
+              <p>Have an invite code? Join a friend and take your place at the starting line.</p>
+              <span className="ka-card-link">Join with code <ArrowUpRight size={15} /></span>
             </Link>
           </div>
+          <div className="ka-host-note"><Users size={17} /><span><strong>Private room hosting is open to every signed-in user.</strong> Official site-wide competitions are scheduled by KeyArena admins.</span></div>
         </div>
       </main>
     </>

@@ -13,6 +13,8 @@ interface Competition {
   maxParticipants:   number;
   registrationCount: number;
   status:            string;
+  reward:            string | null;
+  participants:      { userId: string; username: string | null; name: string | null; registeredAt: string }[];
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,10 +30,14 @@ export default function AdminCompetitionsPage() {
   const [form, setForm] = useState({
     name:            "",
     description:     "",
+    reward:          "",
     scheduledAt:     "",
     maxParticipants: "500",
   });
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [savingReward, setSavingReward] = useState<string | null>(null);
+  const [expandedParticipants, setExpandedParticipants] = useState<string | null>(null);
   const [error,    setError]    = useState("");
   const [success,  setSuccess]  = useState("");
 
@@ -57,29 +63,76 @@ export default function AdminCompetitionsPage() {
           scheduledAt:     new Date(form.scheduledAt).toISOString(),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to create"); return; }
-      setSuccess(`Competition "${data.competition.name}" created!`);
-      setForm({ name: "", description: "", scheduledAt: "", maxParticipants: "500" });
-      fetchComps();
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? `Could not create competition (HTTP ${res.status}).`);
+      }
+      if (!data?.competition) throw new Error("The server did not return the created competition.");
+      setSuccess(`Competition "${data.competition.title ?? data.competition.name}" created!`);
+      setForm({ name: "", description: "", reward: "", scheduledAt: "", maxParticipants: "500" });
+      await fetchComps();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create competition.");
     } finally {
       setCreating(false);
     }
   }
 
   async function handleStatus(id: string, status: string) {
-    await fetch(`/api/admin/competitions/${id}`, {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ status }),
-    });
-    fetchComps();
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/competitions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Could not update competition status.");
+      await fetchComps();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update competition status.");
+    }
+  }
+
+  async function handleReward(id: string, reward: string) {
+    setSavingReward(id);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch(`/api/admin/competitions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reward }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Could not save reward.");
+      setComps((previous) => previous.map((competition) =>
+        competition.id === id ? { ...competition, reward: data.competition.reward } : competition,
+      ));
+      setSuccess("Competition reward saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save reward.");
+    } finally {
+      setSavingReward(null);
+    }
   }
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-    await fetch(`/api/admin/competitions/${id}`, { method: "DELETE" });
-    fetchComps();
+    setError("");
+    setSuccess("");
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/admin/competitions/${id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Could not delete competition.");
+      setComps((previous) => previous.filter((competition) => competition.id !== id));
+      setSuccess(`Competition "${name}" deleted.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete competition.");
+    } finally {
+      setDeleting(null);
+    }
   }
 
   return (
@@ -155,6 +208,19 @@ export default function AdminCompetitionsPage() {
               </div>
 
               <div className="md:col-span-2">
+                <label className="block text-xs text-ink-3 uppercase tracking-wider mb-1.5">
+                  Reward (optional)
+                </label>
+                <input
+                  value={form.reward}
+                  onChange={e => setForm(f => ({ ...f, reward: e.target.value }))}
+                  placeholder="For example: KeyArena champion badge and a $25 gift card"
+                  maxLength={500}
+                  className="input w-full"
+                />
+              </div>
+
+              <div className="md:col-span-2">
                 {error   && <div className="mb-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">{error}</div>}
                 {success && <div className="mb-3 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg px-4 py-2">{success}</div>}
                 <button
@@ -203,9 +269,10 @@ export default function AdminCompetitionsPage() {
                         </span>
                       </div>
                       {comp.description && <p className="text-sm text-ink-2 mb-1">{comp.description}</p>}
+                      {comp.reward && <p className="text-sm text-brand-400 mb-1"><strong>Reward:</strong> {comp.reward}</p>}
                       <p className="text-xs text-ink-3">
-                        📅 {format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")} ·
-                        👥 {comp.registrationCount}/{comp.maxParticipants} registered ·
+                         {format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")} ·
+                         {comp.registrationCount}/{comp.maxParticipants} registered ·
                         🆔 <span className="font-mono">{comp.id.slice(0, 8)}</span>
                       </p>
                     </div>
@@ -218,7 +285,7 @@ export default function AdminCompetitionsPage() {
                           className="bg-green-500/10 text-green-400 border border-green-500/30
                                      text-xs px-3 py-1.5 rounded-lg hover:bg-green-500/20 transition-colors"
                         >
-                          🔴 Go Live
+                           Go Live
                         </button>
                       )}
                       {comp.status === "live" && (
@@ -236,16 +303,59 @@ export default function AdminCompetitionsPage() {
                         className="bg-surface-2 text-ink-2 border border-surface-3
                                    text-xs px-3 py-1.5 rounded-lg hover:bg-surface-3 transition-colors"
                       >
-                        👁 View
+                         View
                       </a>
                       <button
                         onClick={() => handleDelete(comp.id, comp.name)}
+                        disabled={deleting === comp.id}
                         className="bg-red-500/10 text-red-400 border border-red-500/30
-                                   text-xs px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-colors"
+                                   text-xs px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-colors
+                                   disabled:opacity-50 disabled:cursor-wait"
                       >
-                        🗑 Delete
+                         {deleting === comp.id ? "Deleting…" : "Delete"}
                       </button>
                     </div>
+                  </div>
+                  <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+                    <input
+                      aria-label={`Reward for ${comp.name}`}
+                      value={comp.reward ?? ""}
+                      maxLength={500}
+                      onChange={(event) => setComps((previous) => previous.map((item) =>
+                        item.id === comp.id ? { ...item, reward: event.target.value } : item,
+                      ))}
+                      placeholder="Add or edit competition reward"
+                      className="input w-full text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleReward(comp.id, comp.reward ?? "")}
+                      disabled={savingReward === comp.id}
+                      className="btn-ghost px-3 py-2 text-xs disabled:opacity-50"
+                    >{savingReward === comp.id ? "Saving…" : "Save reward"}</button>
+                  </div>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedParticipants((current) => current === comp.id ? null : comp.id)}
+                      className="text-xs text-ink-2 hover:text-brand-400 transition-colors"
+                    >
+                      {expandedParticipants === comp.id ? "Hide participants" : `View participants (${comp.participants?.length ?? comp.registrationCount})`}
+                    </button>
+                    {expandedParticipants === comp.id && (
+                      <div className="mt-2 rounded border border-white/10 bg-[#101012] p-3">
+                        {comp.participants?.length ? (
+                          <ul className="space-y-2">
+                            {comp.participants.map((participant) => (
+                              <li key={participant.userId} className="flex justify-between gap-3 text-xs">
+                                <span className="text-ink">{participant.username ?? participant.name ?? "Racer"}</span>
+                                <time className="text-ink-3">{format(new Date(participant.registeredAt), "MMM d, h:mm a")}</time>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <p className="text-xs text-ink-3">No registered participants yet.</p>}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

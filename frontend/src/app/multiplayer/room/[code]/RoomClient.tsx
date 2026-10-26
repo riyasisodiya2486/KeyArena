@@ -12,6 +12,7 @@ import { LiveProgressBars } from "@/components/multiplayer/LiveProgressBars";
 import { FinishScreen } from "@/components/multiplayer/FinishScreen";
 import { TypingDisplay } from "@/components/practice/TypingDisplay";
 import { TypingInput } from "@/components/practice/TypingInput";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 interface RoomClientProps {
   code:     string;
@@ -88,7 +89,7 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
   if (phase === "error") {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="text-4xl mb-4">😕</div>
+        <AppIcon name="help" size={30} className="mx-auto mb-4 text-brand-400" />
         <h2 className="text-xl font-bold text-ink mb-2">Can&apos;t join room</h2>
         <p className="text-sm text-ink-2 mb-6">{error || "Room not found or already in progress."}</p>
         <div className="flex gap-3 justify-center">
@@ -194,7 +195,7 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
       {engine.status === "finished" && phase === "racing" && (
         <div className="mt-4 card px-5 py-4 text-center">
           <div className="text-xl mb-1">
-            {myRank === 1 ? "🥇" : myRank === 2 ? "🥈" : myRank === 3 ? "🥉" : "🏁"}
+            <AppIcon name={myRank && myRank <= 3 ? "award" : "flag"} size={28} className="mx-auto text-brand-400" />
           </div>
           <p className="text-sm font-medium text-ink">
             {myRank ? `You finished #${myRank}!` : "You finished!"} Waiting for others…

@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Standing } from "@/types/race";
+import { AppIcon } from "@/components/ui/AppIcon";
 
-const MEDALS = ["🥇", "🥈", "🥉"];
 
 interface RaceFinishedScreenProps {
   standings: Standing[];
@@ -21,7 +21,7 @@ export function RaceFinishedScreen({ standings, myUserId, roomCode, onRematch }:
       {/* Header */}
       <div className="text-center mb-8">
         <div className="text-5xl mb-3">
-          {myResult?.rank === 1 ? "🏆" : myResult?.rank === 2 ? "🥈" : myResult?.rank === 3 ? "🥉" : "🏁"}
+          <AppIcon name={myResult?.rank && myResult.rank <= 3 ? "award" : "flag"} size={34} className="mx-auto text-brand-400" />
         </div>
         <h1 className="text-2xl font-bold font-mono text-ink">Race finished!</h1>
         {myResult && (
@@ -44,7 +44,7 @@ export function RaceFinishedScreen({ standings, myUserId, roomCode, onRematch }:
                           ${isMe ? "bg-brand-400/5 border-l-2 border-l-brand-400" : ""}`}
             >
               <span className="text-xl w-8 text-center flex-shrink-0">
-                {i < 3 ? MEDALS[i] : <span className="font-mono text-sm text-ink-3">#{s.rank}</span>}
+                {i < 3 ? <AppIcon name="award" className={i === 0 ? "text-amber-300" : i === 1 ? "text-slate-300" : "text-orange-400"} /> : <span className="font-mono text-sm text-ink-3">#{s.rank}</span>}
               </span>
 
               {s.image ? (

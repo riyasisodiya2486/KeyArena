@@ -56,47 +56,47 @@ export function PersonalStats({
     <div className="space-y-10">
       {/* ── Metric Performance Cards Grid ─────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-[#161618] border border-neutral-800 rounded-xl px-5 py-4">
-          <p className="text-xs font-mono text-[#A8A7A3] tracking-wider uppercase">Avg Speed</p>
-          <p className="text-2xl font-bold font-mono text-[#E8593C] mt-1">{avgWpm} <span className="text-xs text-[#A8A7A3] font-sans">WPM</span></p>
+        <div className="bg-surface-1 border border-surface-3 rounded-md px-5 py-4">
+          <p className="text-xs font-mono text-ink-2 tracking-wider uppercase">Avg Speed</p>
+          <p className="text-2xl font-bold font-mono text-brand-400 mt-1">{avgWpm} <span className="text-xs text-ink-2 font-sans">WPM</span></p>
         </div>
 
-        <div className="bg-[#161618] border border-neutral-800 rounded-xl px-5 py-4">
-          <p className="text-xs font-mono text-[#A8A7A3] tracking-wider uppercase">High Score</p>
+        <div className="bg-surface-1 border border-surface-3 rounded-md px-5 py-4">
+          <p className="text-xs font-mono text-ink-2 tracking-wider uppercase">High Score</p>
           <p className="text-2xl font-bold font-mono text-amber-400 mt-1">{bestWpm} <span className="text-xs text-[#A8A7A3] font-sans">WPM</span></p>
         </div>
 
-        <div className="bg-[#161618] border border-neutral-800 rounded-xl px-5 py-4">
-          <p className="text-xs font-mono text-[#A8A7A3] tracking-wider uppercase">Avg Accuracy</p>
+        <div className="bg-surface-1 border border-surface-3 rounded-md px-5 py-4">
+          <p className="text-xs font-mono text-ink-2 tracking-wider uppercase">Avg Accuracy</p>
           <p className="text-2xl font-bold font-mono text-emerald-400 mt-1">{avgAccuracy}<span className="text-sm font-sans">%</span></p>
         </div>
 
-        <div className="bg-[#161618] border border-neutral-800 rounded-xl px-5 py-4">
-          <p className="text-xs font-mono text-[#A8A7A3] tracking-wider uppercase">Tests Completed</p>
-          <p className="text-2xl font-bold font-mono text-[#F2F1EE] mt-1">{totalRaces}</p>
+        <div className="bg-surface-1 border border-surface-3 rounded-md px-5 py-4">
+          <p className="text-xs font-mono text-ink-2 tracking-wider uppercase">Tests Completed</p>
+          <p className="text-2xl font-bold font-mono text-ink mt-1">{totalRaces}</p>
         </div>
 
-        <div className="col-span-2 md:col-span-1 bg-[#161618] border border-neutral-800 rounded-xl px-5 py-4">
-          <p className="text-xs font-mono text-[#A8A7A3] tracking-wider uppercase">Practice Time</p>
-          <p className="text-lg font-bold font-mono text-[#F2F1EE] mt-2 truncate">{formatTotalTime(totalTimeMs)}</p>
+        <div className="col-span-2 md:col-span-1 bg-surface-1 border border-surface-3 rounded-md px-5 py-4">
+          <p className="text-xs font-mono text-ink-2 tracking-wider uppercase">Practice Time</p>
+          <p className="text-lg font-bold font-mono text-ink mt-2 truncate">{formatTotalTime(totalTimeMs)}</p>
         </div>
       </div>
 
       {/* ── Recent Race Match History ─────────────────────────────────── */}
-      <div className="bg-[#161618] border border-neutral-800 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-800 bg-[#1A1A1D]">
-          <h2 className="text-sm font-bold font-mono text-[#F2F1EE]">Activity Log</h2>
+      <div className="bg-surface-1 border border-surface-3 rounded-md overflow-hidden">
+        <div className="px-6 py-4 border-b border-surface-3 bg-surface-2">
+          <h2 className="text-sm font-bold font-mono text-ink">Activity Log</h2>
         </div>
 
         {sessions.length === 0 ? (
-          <div className="px-6 py-12 text-center text-sm text-[#6B6A67] font-sans">
+          <div className="px-6 py-12 text-center text-sm text-ink-3 font-sans">
             No typing matches found. Go complete a practice match to log metrics!
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse font-sans text-sm">
               <thead>
-                <tr className="border-b border-neutral-800 text-xs text-[#A8A7A3] uppercase tracking-wider font-mono bg-[#0E0E0F]/30">
+                <tr className="border-b border-surface-3 text-xs text-ink-2 uppercase tracking-wider font-mono bg-surface/30">
                   <th className="px-6 py-3 font-medium">Date</th>
                   <th className="px-6 py-3 font-medium">Mode</th>
                   <th className="px-6 py-3 font-medium">Difficulty</th>
@@ -104,10 +104,10 @@ export function PersonalStats({
                   <th className="px-6 py-3 font-medium">Accuracy</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-800/60 text-[#F2F1EE]">
+              <tbody className="divide-y divide-surface-3/60 text-ink">
                 {sessions.map((session) => (
                   <tr key={session.id} className="hover:bg-neutral-800/20 transition-colors">
-                    <td className="px-6 py-3 text-xs text-[#A8A7A3]">
+                    <td className="px-6 py-3 text-xs text-ink-2">
                       {session.completedAt ? new Date(session.completedAt).toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -129,7 +129,7 @@ export function PersonalStats({
                       </span>
                     </td>
                     <td className="px-6 py-3 font-bold font-mono text-[#E8593C]">
-                      {session.wpm ?? 0} <span className="text-[10px] font-sans font-normal text-[#A8A7A3]">WPM</span>
+                      {session.wpm ?? 0} <span className="text-[10px] font-sans font-normal text-ink-2">WPM</span>
                     </td>
                     <td className="px-6 py-3 font-mono text-neutral-300">
                       {session.accuracy ?? 0}%

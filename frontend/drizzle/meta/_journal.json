@@ -15,6 +15,13 @@
       "when": 1780498324348,
       "tag": "0001_sparkling_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793040000000,
+      "tag": "0002_competition_rewards",
+      "breakpoints": true
     }
   ]
 }

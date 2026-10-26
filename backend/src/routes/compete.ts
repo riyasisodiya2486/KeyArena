@@ -30,6 +30,9 @@ export async function competeRoutes(app: FastifyInstance) {
         name: c.title,
         scheduledAt: c.scheduledAt,
         maxParticipants: c.maxPlayers,
+        // Keep the legacy field aligned with the registration table so API
+        // clients never see the stale cached counter from the competition row.
+        registeredCount: Number(regCount),
         registrationCount: Number(regCount),
         status,
       };

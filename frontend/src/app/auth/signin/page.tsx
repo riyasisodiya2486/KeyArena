@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { Navbar } from "@/components/layout/Navbar";
 
 type Tab = "email" | "oauth";
 
@@ -49,7 +50,8 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+    <div className="ka-auth-page min-h-screen flex flex-col">
+      <Navbar />
       {/* Background grid */}
       <div
         className="fixed inset-0 opacity-[0.03] pointer-events-none"
@@ -60,12 +62,12 @@ export default function SignInPage() {
         }}
       />
 
-      <div className="relative w-full max-w-sm">
+      <div className="ka-auth-card relative w-full max-w-sm mx-auto my-auto p-4">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-0.5 mb-3">
-            <span className="font-mono text-3xl font-bold text-ink">key</span>
-            <span className="font-mono text-3xl font-bold text-brand-400">race</span>
+            <span className="font-mono text-3xl font-bold tracking-[-.08em] text-ink">Key</span>
+            <span className="font-mono text-3xl font-bold tracking-[-.08em] text-brand-400">Arena</span>
           </Link>
           <p className="text-ink-2 text-sm">
             Sign in to track WPM, compete, and rank globally.

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 export type LeaderboardEntry = {
   rank:   number;
@@ -22,9 +23,9 @@ interface LeaderboardTableProps {
 }
 
 function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-xl">🥇</span>;
-  if (rank === 2) return <span className="text-xl">🥈</span>;
-  if (rank === 3) return <span className="text-xl">🥉</span>;
+  if (rank === 1) return <AppIcon name="award" className="text-amber-300" />;
+  if (rank === 2) return <AppIcon name="award" className="text-slate-300" />;
+  if (rank === 3) return <AppIcon name="award" className="text-orange-400" />;
   return (
     <span className="font-mono text-sm text-ink-3 w-8 text-center inline-block">
       {rank}
@@ -82,7 +83,7 @@ export function LeaderboardTable({ entries, loading }: LeaderboardTableProps) {
   if (entries.length === 0) {
     return (
       <div className="card px-6 py-16 text-center">
-        <p className="text-2xl mb-3">🏁</p>
+        <AppIcon name="flag" size={24} className="mx-auto mb-3 text-brand-400" />
         <p className="text-ink font-medium mb-1">No scores yet</p>
         <p className="text-sm text-ink-2">
           Complete a race to appear on the leaderboard.

@@ -96,7 +96,9 @@ export const authOptions: NextAuthOptions = {
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-  debug:  process.env.NODE_ENV === "development",
+  // Keep auth diagnostics opt-in instead of repeating the DEBUG_ENABLED warning
+  // on every development request. Set NEXTAUTH_DEBUG=true when investigating auth.
+  debug:  process.env.NEXTAUTH_DEBUG === "true",
 };
 
 export default NextAuth(authOptions);

@@ -127,7 +127,7 @@ export function LeaderboardClient() {
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4
                         text-sm text-red-400 flex items-center gap-3">
-          <span>⚠️</span>
+          <span>⚠</span>
           <span>{error}</span>
           <button onClick={() => fetchLeaderboard(board, page)}
             className="ml-auto text-red-400 hover:text-red-300 underline text-xs">

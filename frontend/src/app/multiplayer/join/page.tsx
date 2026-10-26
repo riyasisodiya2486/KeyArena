@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 export default function JoinRoomPage() {
   const { data: session } = useSession();
@@ -35,7 +36,7 @@ export default function JoinRoomPage() {
       <main className="min-h-screen bg-surface flex items-center justify-center p-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <div className="text-4xl mb-3">🔗</div>
+            <AppIcon name="link" size={28} className="mx-auto mb-3 text-brand-400" />
             <h1 className="text-2xl font-bold font-mono text-ink mb-2">Join a room</h1>
             <p className="text-ink-2 text-sm">Enter the 6-character room code from your friend.</p>
           </div>

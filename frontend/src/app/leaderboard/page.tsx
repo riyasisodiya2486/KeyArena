@@ -10,6 +10,7 @@ import { users }             from "@/lib/db/schema";
 import { inArray }           from "drizzle-orm";
 import Image                 from "next/image";
 import type { Metadata }     from "next";
+import { Medal } from "lucide-react";
 
 export const metadata: Metadata = { title: "Leaderboard" };
 export const dynamic           = "force-dynamic";
@@ -32,7 +33,7 @@ async function Podium() {
     : [];
   const umap = Object.fromEntries(userRows.map((u) => [u.id, u]));
 
-  const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
+  const medalColors = ["text-amber-300", "text-slate-300", "text-orange-400"];
   const heights = ["h-24", "h-16", "h-12"];
   const order  = [1, 0, 2]; // display: 2nd, 1st, 3rd
 
@@ -49,7 +50,7 @@ async function Podium() {
           <div key={entry.value}
             className={`flex flex-col items-center gap-2 ${idx === 0 ? "scale-110" : ""}`}>
             {/* Medal */}
-            <span className="text-2xl">{medals[idx]}</span>
+            <Medal className={`h-6 w-6 ${medalColors[idx]}`} aria-label={`Rank ${rank}`} />
 
             {/* Avatar */}
             {u?.image ? (
@@ -88,15 +89,14 @@ export default async function LeaderboardPage() {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-surface">
-        <div className="max-w-3xl mx-auto px-4 py-10">
+      <main className="ka-route-page min-h-screen">
+        <div className="ka-route-shell">
 
           {/* Page header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold font-mono text-ink mb-2">Leaderboard</h1>
-            <p className="text-ink-2 text-sm">
-              Global rankings &mdash; updated after every race
-            </p>
+            <p className="ka-route-kicker">KEYARENA / GLOBAL BOARD</p>
+            <h1 className="ka-route-title">The leaderboard<span>.</span></h1>
+            <p className="text-ink-2 text-sm">Global rankings, updated after every recorded race.</p>
           </div>
 
           {/* Top 3 podium */}

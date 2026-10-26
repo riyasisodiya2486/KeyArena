@@ -6,9 +6,10 @@ import type { TypingStats, EngineStatus } from "@/hooks/useTypingEngine";
 interface StatsHudProps {
   stats: TypingStats;
   status: EngineStatus;
+  remainingMs?: number | null;
 }
 
-export function StatsHud({ stats, status }: StatsHudProps) {
+export function StatsHud({ stats, status, remainingMs = null }: StatsHudProps) {
   const items = [
     {
       label: "WPM",
@@ -30,8 +31,10 @@ export function StatsHud({ stats, status }: StatsHudProps) {
     },
     {
       label: "Time",
-      value: status === "idle" ? "—" : formatTime(stats.elapsedMs),
-      sub: undefined,
+      value: remainingMs !== null
+        ? formatTime(remainingMs)
+        : status === "idle" ? "—" : formatTime(stats.elapsedMs),
+      sub: remainingMs !== null ? "remaining" : undefined,
       highlight: false,
     },
   ];

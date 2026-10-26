@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AppIcon } from "@/components/ui/AppIcon";
 import type { BoardType } from "@/lib/redis";
 
 interface UserRankCardProps {
@@ -52,7 +53,7 @@ export function UserRankCard({ rank, wpm, board }: UserRankCardProps) {
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-brand-400/10 border border-brand-400/20
                         flex items-center justify-center">
-          <span className="text-lg">🏆</span>
+          <AppIcon name="trophy" className="text-brand-400" />
         </div>
         <div>
           <p className="text-xs text-ink-3 uppercase tracking-wider">Your rank</p>

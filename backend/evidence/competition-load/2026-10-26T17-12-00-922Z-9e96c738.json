@@ -1,0 +1,128 @@
+{
+  "runId": "9e96c738-f69f-49ce-bf75-3b8e0b0aacba",
+  "test": "KeyArena competition 500 participant load test",
+  "startedAt": "2026-10-26T17:12:00.922Z",
+  "target": "http://localhost:4000",
+  "requestedParticipants": 500,
+  "host": {
+    "platform": "Windows_NT 10.0.26300",
+    "arch": "x64",
+    "cpuCount": 32
+  },
+  "phases": {
+    "registration": {
+      "durationMs": 1083.3,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 833.2,
+      "p95Ms": 1018.7,
+      "fullEventResponse": 409
+    },
+    "socketConnect": {
+      "durationMs": 440.6,
+      "connected": 500,
+      "p50Ms": 319.5,
+      "p95Ms": 354.9,
+      "maxMs": 365.1
+    },
+    "join": {
+      "durationMs": 3330.5,
+      "successfulAcks": 500,
+      "registeredPlayersInRedis": 35,
+      "p50AckMs": 818.2,
+      "p95AckMs": 3091.3,
+      "maxAckMs": 3305.4
+    }
+  },
+  "checks": [
+    {
+      "name": "Backend health endpoint is reachable",
+      "passed": true,
+      "status": 200
+    },
+    {
+      "name": "Every simulated racer registered through the competition API",
+      "passed": true,
+      "durationMs": 1083.3,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 833.2,
+      "p95Ms": 1018.7,
+      "fullEventResponse": 409
+    },
+    {
+      "name": "Registration database count matches the simulated field",
+      "passed": true,
+      "durationMs": 1083.3,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 833.2,
+      "p95Ms": 1018.7,
+      "fullEventResponse": 409
+    },
+    {
+      "name": "Registration API rejects an extra racer when the competition is full",
+      "passed": true,
+      "durationMs": 1083.3,
+      "succeeded": 500,
+      "failed": 0,
+      "countInDatabase": 500,
+      "p50Ms": 833.2,
+      "p95Ms": 1018.7,
+      "fullEventResponse": 409
+    },
+    {
+      "name": "All simulated socket clients connected",
+      "passed": true,
+      "durationMs": 440.6,
+      "connected": 500,
+      "p50Ms": 319.5,
+      "p95Ms": 354.9,
+      "maxMs": 365.1
+    },
+    {
+      "name": "Every registered racer received a successful join acknowledgement",
+      "passed": true,
+      "durationMs": 3330.5,
+      "successfulAcks": 500,
+      "registeredPlayersInRedis": 35,
+      "p50AckMs": 818.2,
+      "p95AckMs": 3091.3,
+      "maxAckMs": 3305.4
+    },
+    {
+      "name": "Redis room retained every joined racer",
+      "passed": false,
+      "durationMs": 3330.5,
+      "successfulAcks": 500,
+      "registeredPlayersInRedis": 35,
+      "p50AckMs": 818.2,
+      "p95AckMs": 3091.3,
+      "maxAckMs": 3305.4
+    }
+  ],
+  "limitations": [
+    "This run measures the configured local environment; production capacity depends on its server, database, Redis, network, and deployment settings.",
+    "Simulated participants use separate authenticated-by-registration socket identities, not real browsers or geographically distributed networks."
+  ],
+  "status": "failed",
+  "backendProcess": {
+    "pid": 19316,
+    "samples": 1,
+    "cpuSecondsStart": 6.125,
+    "cpuSecondsEnd": 6.125,
+    "workingSetPeakMiB": 208.9,
+    "workingSetFinalMiB": 208.9
+  },
+  "finishedAt": "2026-10-26T17:12:06.816Z",
+  "durationMs": 5894,
+  "eventLoopDelayMs": {
+    "p50": 20.07,
+    "p95": 31.36,
+    "max": 90.18
+  },
+  "error": "Error: Redis room retained every joined racer\n    at assert (file:///D:/projects/keyArena/backend/scripts/competition-load-test.mjs:54:25)\n    at joinAll (file:///D:/projects/keyArena/backend/scripts/competition-load-test.mjs:238:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/projects/keyArena/backend/scripts/competition-load-test.mjs:417:3"
+}

@@ -8,6 +8,7 @@ import {
 import { useTypingEngine } from "@/hooks/useTypingEngine";
 import { TypingDisplay } from "@/components/practice/TypingDisplay";
 import { TypingInput } from "@/components/practice/TypingInput";
+import { AppIcon } from "@/components/ui/AppIcon";
 
 interface InsightsData {
   hasData:         boolean;
@@ -98,7 +99,7 @@ export function InsightsDashboard() {
   if (!data?.hasData) {
     return (
       <div className="card p-10 text-center">
-        <div className="text-4xl mb-3">📊</div>
+        <AppIcon name="chart" size={30} className="mx-auto mb-3 text-brand-400" />
         <h2 className="text-lg font-semibold text-ink mb-2">No data yet</h2>
         <p className="text-ink-2 text-sm">Complete at least one race to see your insights.</p>
       </div>
@@ -129,7 +130,7 @@ export function InsightsDashboard() {
       {data.improving && (
         <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-5 py-3
                         flex items-center gap-3">
-          <span className="text-xl">📈</span>
+          <AppIcon name="trend" className="text-brand-400" />
           <div>
             <p className="text-sm font-medium text-green-400">You&apos;re improving!</p>
             <p className="text-xs text-ink-2">
@@ -149,20 +150,20 @@ export function InsightsDashboard() {
           <AreaChart data={data.wpmTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
             <defs>
               <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#E8593C" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#E8593C" stopOpacity={0} />
+                <stop offset="5%"  stopColor="#E45B46" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#E45B46" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#26262A" />
-            <XAxis dataKey="race" tick={{ fill: "#6B6A67", fontSize: 11 }}
-              axisLine={false} tickLine={false} label={{ value: "Race #", position: "insideBottom", fill: "#6B6A67", fontSize: 11 }} />
-            <YAxis tick={{ fill: "#6B6A67", fontSize: 11 }} axisLine={false} tickLine={false} domain={["auto","auto"]} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2E" />
+            <XAxis dataKey="race" tick={{ fill: "#807D76", fontSize: 11 }}
+              axisLine={false} tickLine={false} label={{ value: "Race #", position: "insideBottom", fill: "#807D76", fontSize: 11 }} />
+            <YAxis tick={{ fill: "#807D76", fontSize: 11 }} axisLine={false} tickLine={false} domain={["auto","auto"]} />
             <Tooltip
-              contentStyle={{ background: "#1E1E21", border: "1px solid #303035", borderRadius: "8px", fontSize: "12px" }}
+              contentStyle={{ background: "#19191C", border: "1px solid #2A2A2E", borderRadius: "6px", fontSize: "12px" }}
               formatter={(v: number) => [`${v} wpm`, "WPM"]}
             />
-            <Area type="monotone" dataKey="wpm" stroke="#E8593C" strokeWidth={2}
-              fill="url(#wg)" dot={{ fill: "#E8593C", r: 3, strokeWidth: 0 }} />
+            <Area type="monotone" dataKey="wpm" stroke="#E45B46" strokeWidth={2}
+              fill="url(#wg)" dot={{ fill: "#E45B46", r: 3, strokeWidth: 0 }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -241,13 +242,13 @@ export function InsightsDashboard() {
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Generating…
               </>
-            ) : drills.length > 0 ? "Regenerate drills" : "✨ Generate drills"}
+            ) : drills.length > 0 ? "Regenerate drills" : "Generate drills"}
           </button>
         </div>
 
         {drills.length === 0 && !drillLoading && (
           <div className="bg-surface-2 rounded-xl p-8 text-center">
-            <div className="text-3xl mb-3">✨</div>
+            <AppIcon name="chart" size={28} className="mx-auto mb-3 text-brand-400" />
             <p className="text-sm text-ink-2 mb-1">
               Click &quot;Generate drills&quot; to get 5 custom sentences
             </p>

@@ -14,26 +14,26 @@ export function WpmChart({
   return (
     <ResponsiveContainer width="100%" height={180}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#303035" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2E" />
         <XAxis dataKey="date"
-          tick={{fill:"#6B6A67",fontSize:11}}
+          tick={{fill:"#807D76",fontSize:11}}
           axisLine={false} tickLine={false} />
         <YAxis
-          tick={{fill:"#6B6A67",fontSize:11}}
+          tick={{fill:"#807D76",fontSize:11}}
           axisLine={false} tickLine={false}
           domain={["auto","auto"]} />
         <Tooltip
           contentStyle={{
-            background:"#1E1E21",
-            border:"1px solid #303035",
+            background:"#19191C",
+            border:"1px solid #2A2A2E",
             borderRadius:"8px",
-            color:"#F2F1EE"
+            color:"#F2EEE6"
           }}
           formatter={(v:number) => [`${v} wpm`,"Speed"]}
         />
         <Line type="monotone" dataKey="wpm"
-          stroke="#E8593C" strokeWidth={2}
-          dot={{fill:"#E8593C",r:3}}
+          stroke="#E45B46" strokeWidth={2}
+          dot={{fill:"#E45B46",r:3}}
         />
       </LineChart>
     </ResponsiveContainer>
