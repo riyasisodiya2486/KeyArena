@@ -13,6 +13,7 @@ interface Competition {
   description:       string | null;
   reward:            string | null;
   scheduledAt:       string;
+  endTime?:          string;
   maxParticipants:   number;
   registrationCount: number;
   status:            string;
@@ -124,6 +125,11 @@ export default function CompetePage() {
                       )}
                       <p className="text-xs text-ink-3 mt-1">
                         <AppIcon name="calendar" size={13} className="inline mr-1.5" />{format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")}
+                        {comp.endTime && (
+                          <span className="ml-3">
+                            <AppIcon name="calendar" size={13} className="inline mr-1.5" />Ends {format(new Date(comp.endTime), "MMM d, yyyy · h:mm a")}
+                          </span>
+                        )}
                       </p>
                     </div>
 

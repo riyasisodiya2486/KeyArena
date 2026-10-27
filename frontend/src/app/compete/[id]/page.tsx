@@ -108,7 +108,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
       setCountdown(Math.max(0, Math.ceil((d.countdownEnd - Date.now()) / 1000)));
     });
 
-    s.on("race_start", () => { setPhase("racing"); startRaceRef.current(); });
+    s.on("race_start", () => { setPhase("racing"); });
 
     s.on("comp_leaderboard_update", (d: { top25: TopEntry[]; totalPlayers: number }) => {
       setTop25(d.top25);
@@ -128,6 +128,42 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
     return () => { s.disconnect(); };
   }, [session]);
+
+  // Socket.IO start events are transient. A racer who enters after the host
+  // starts the event must reconcile against the persisted competition state.
+  useEffect(() => {
+    if (phase !== "waiting") return;
+    let active = true;
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/compete/${encodeURIComponent(params.id)}`, { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json() as { competition?: { status: string } };
+        const competition = data.competition;
+        if (!active || !competition) return;
+        if (competition.status === "racing") {
+          // Ask the backend to repair a stale Redis room, if needed. The normal
+          // countdown/race_start events then move every connected racer in sync.
+          socketRef.current?.emit("sync_competition", { competitionId: params.id });
+        }
+        if (competition.status === "finished") {
+          setCompetitionFinished(true);
+          setPhase("finished");
+        }
+      } catch {
+        // Keep the live socket connection active; the next poll can recover.
+      }
+    };
+    void checkStatus();
+    const timer = window.setInterval(checkStatus, 2500);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [phase, params.id]);
+
+  useEffect(() => {
+    if (phase === "racing" && passageText && engine.status === "idle") {
+      startRaceRef.current();
+    }
+  }, [phase, passageText, engine.status]);
 
   useEffect(() => {
     if (phase !== "countdown") return;
@@ -191,8 +227,8 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen bg-surface">
-        <div className="max-w-5xl mx-auto px-4 py-6">
+      <main className="ka-competition-race">
+        <div className="ka-competition-race-shell">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-xl font-bold font-mono text-ink">{competitionName || "Competition"}</h1>
@@ -250,7 +286,7 @@ function CompeteRacePageContent({ params }: { params: { id: string } }) {
 
           {(phase === "racing" || phase === "finished") && (
             <div className="grid md:grid-cols-3 gap-4">
-              <div className="md:col-span-2 space-y-4">
+              <div className="md:col-span-2 space-y-5">
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: "WPM",      value: engine.stats.wpm || "—",            color: engine.stats.wpm >= 80 ? "text-brand-400" : "text-ink" },

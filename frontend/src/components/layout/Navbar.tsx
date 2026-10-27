@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -49,11 +50,15 @@ export function Navbar() {
           
           {/* Logo Section */}
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="grid h-7 w-7 place-items-center border border-white/50 font-mono text-sm font-bold tracking-[-.12em] text-[#F2EEE6]">
-                K<span className="text-[#E45B46]">.</span>
-              </span>
-              <span className="text-lg font-bold tracking-[-.06em] text-[#F2EEE6]">
+            <Link href="/" className="flex items-center gap-2 group">
+              <Image
+                src="/logo.png"
+                alt="KeyArena logo"
+                width={32}
+                height={32}
+                className="rounded-md transition-transform group-hover:scale-105"
+              />
+              <span className="text-xl font-bold tracking-[-.06em] text-[#F2EEE6] transition-colors group-hover:text-[#E45B46]">
                 KeyArena
               </span>
             </Link>
@@ -67,13 +72,16 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     className={clsx(
-                      "relative px-3 py-2 font-sans text-xs font-medium transition-colors duration-200",
+                      "relative px-4 py-2 rounded-lg font-sans text-sm font-medium transition-all duration-200",
                       isActive
-                        ? "text-[#E45B46]"
-                        : "text-[#AAA69D] hover:text-[#F2EEE6]"
+                        ? "text-[#E45B46] bg-[#E45B46]/10"
+                        : "text-[#AAA69D] hover:text-[#F2EEE6] hover:bg-white/5"
                     )}
                   >
                     {link.label}
+                    {isActive && (
+                      <span className="absolute inset-x-3 -bottom-[9px] h-0.5 rounded-full bg-[#E45B46]" />
+                    )}
                   </Link>
                 );
               })}

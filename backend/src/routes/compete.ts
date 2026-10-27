@@ -19,11 +19,18 @@ export async function competeRoutes(app: FastifyInstance) {
         .from(competitionRegistrations)
         .where(eq(competitionRegistrations.competitionId, c.id));
 
-      const status = c.status === "racing"
-        ? "live"
-        : c.status === "finished"
+      const now = new Date();
+      const status = c.status === "finished" || now >= c.endTime
         ? "finished"
+        : c.status === "racing" || now >= c.startTime
+        ? "live"
         : "upcoming";
+
+      if (status === "finished" && c.status !== "finished") {
+        await db.update(competitions)
+          .set({ status: "finished", finishedAt: now })
+          .where(eq(competitions.id, c.id));
+      }
 
       return {
         ...c,

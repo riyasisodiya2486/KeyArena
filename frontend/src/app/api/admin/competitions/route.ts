@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
       description: competition.description,
       reward: competition.reward,
       scheduledAt: competition.scheduledAt,
+      endTime: competition.endTime,
       maxParticipants: competition.maxPlayers,
       status,
       registrationCount: registeredUsers.length,
@@ -65,6 +66,7 @@ const CreateSchema = z.object({
   name:            z.string().min(3).max(100),
   description:     z.string().max(500).optional(),
   scheduledAt:     z.string().datetime(),
+  endsAt:          z.string().datetime().optional(),
   maxParticipants: z.number().int().min(2).max(10000).default(500),
   reward:          z.string().max(500).optional(),
   passageId:       z.string().uuid().optional(),
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid request" }, { status: 400 });
     }
 
-    const { name, description, scheduledAt, maxParticipants, passageId, reward } = parsed.data;
+    const { name, description, scheduledAt, endsAt, maxParticipants, passageId, reward } = parsed.data;
 
     // If no passageId is given, pick a random hard passage.
     let finalPassageId = passageId;
@@ -93,13 +95,16 @@ export async function POST(req: NextRequest) {
       finalPassageId = p?.id;
     }
 
+    const startTime = new Date(scheduledAt);
+    const endTime = endsAt ? new Date(endsAt) : new Date(startTime.getTime() + 60 * 60 * 1000);
+
     const [competition] = await db.insert(competitions).values({
       title: name,
       description: description ?? null,
       reward: reward?.trim() || null,
-      startTime: new Date(scheduledAt),
-      endTime: new Date(new Date(scheduledAt).getTime() + 60 * 60 * 1000),
-      scheduledAt: new Date(scheduledAt),
+      startTime,
+      endTime,
+      scheduledAt: startTime,
       maxPlayers: maxParticipants,
       passageId: finalPassageId ?? null,
       status: "waiting",

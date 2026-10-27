@@ -212,53 +212,60 @@ export function registerCompetitionSocket(io: Server) {
     countdownEnd?: number,
     passageOverride?: string,
   ) {
-    let room = await getComp(competitionId);
-    if (!room) {
-      const competition = await db.query.competitions.findFirst({
-        where: eq(competitions.id, competitionId),
+    const lockKey = `comp_start_lock:${competitionId}`;
+    const lock = await redis.set(lockKey, "1", { NX: true, EX: 15 });
+    if (!lock) return false;
+    try {
+      let room = await getComp(competitionId);
+      if (!room) {
+        const competition = await db.query.competitions.findFirst({
+          where: eq(competitions.id, competitionId),
+        });
+        if (!competition) return false;
+        const passage = competition.passageId
+          ? await db.query.passages.findFirst({ where: eq(passages.id, competition.passageId) })
+          : null;
+        room = {
+          competitionId,
+          passageText: passage?.content ?? "The quick brown fox jumps over the lazy dog.",
+          status: "waiting",
+          players: {},
+          startTime: null,
+          finishOrder: [],
+          maxPlayers: competition.maxPlayers ?? 500,
+        };
+      }
+      if (room.status === "finished") return false;
+      // Duplicate admin commands or client recovery requests must not reset a
+      // countdown or schedule multiple race-start timers.
+      if (room.status === "countdown" || room.status === "racing") return true;
+
+      if (passageOverride?.trim()) room.passageText = passageOverride.trim();
+      const endTs = Math.max(Date.now() + 1000, countdownEnd ?? Date.now() + 3000);
+      room.status = "countdown";
+      room.countdownEnd = endTs;
+      await saveComp(room);
+
+      ns.to(competitionId).emit("countdown_start", {
+        countdownEnd: endTs,
+        passage: room.passageText,
       });
-      if (!competition) return false;
-      const passage = competition.passageId
-        ? await db.query.passages.findFirst({ where: eq(passages.id, competition.passageId) })
-        : null;
-      room = {
-        competitionId,
-        passageText: passage?.content ?? "The quick brown fox jumps over the lazy dog.",
-        status: "waiting",
-        players: {},
-        startTime: null,
-        finishOrder: [],
-        maxPlayers: competition.maxPlayers ?? 500,
-      };
+
+      const delay = Math.max(0, endTs - Date.now());
+      setTimeout(async () => {
+        const latest = await getComp(competitionId);
+        if (!latest || latest.status !== "countdown") return;
+        latest.status = "racing";
+        latest.countdownEnd = null;
+        latest.startTime = Date.now();
+        await saveComp(latest);
+        ns.to(competitionId).emit("race_start");
+      }, delay);
+
+      return true;
+    } finally {
+      await redis.del(lockKey).catch(() => {});
     }
-    if (room.status === "finished") return false;
-
-    if (passageOverride?.trim()) {
-      room.passageText = passageOverride.trim();
-    }
-
-    const endTs = Math.max(Date.now() + 1000, countdownEnd ?? Date.now() + 3000);
-    room.status = "countdown";
-    room.countdownEnd = endTs;
-    await saveComp(room);
-
-    ns.to(competitionId).emit("countdown_start", {
-      countdownEnd: endTs,
-      passage: room.passageText,
-    });
-
-    const delay = Math.max(0, endTs - Date.now());
-    setTimeout(async () => {
-      const latest = await getComp(competitionId);
-      if (!latest || latest.status !== "countdown") return;
-      latest.status = "racing";
-      latest.countdownEnd = null;
-      latest.startTime = Date.now();
-      await saveComp(latest);
-      ns.to(competitionId).emit("race_start");
-    }, delay);
-
-    return true;
   }
 
   async function finishCompetitionNow(competitionId: string) {
@@ -307,9 +314,15 @@ export function registerCompetitionSocket(io: Server) {
           initialRoom = {
             competitionId: data.competitionId,
             passageText:   passage.content,
-            status:        "waiting",
+            // The competition database is authoritative for late entrants.
+            // If an admin already started it, never create a fresh waiting room.
+            status:        comp.status === "racing"
+              ? "racing"
+              : comp.status === "finished"
+              ? "finished"
+              : "waiting",
             players:       {},
-            startTime:     null,
+            startTime:     comp.startedAt?.getTime() ?? null,
             finishOrder:   [],
             maxPlayers:    comp.maxPlayers ?? 500,
           };
@@ -372,6 +385,25 @@ export function registerCompetitionSocket(io: Server) {
       } catch (err) {
         console.error("[join_competition]", err);
         cb({ ok: false, error: "Failed to join" });
+      }
+    });
+
+    // A late entrant may discover that the database is live while Redis still
+    // has a waiting room (for example, after a missed Pub/Sub start command).
+    // Repair that divergence once the client asks us to synchronize.
+    socket.on("sync_competition", async (data: { competitionId: string }) => {
+      try {
+        const competition = await db.query.competitions.findFirst({
+          where: eq(competitions.id, data.competitionId),
+          columns: { status: true },
+        });
+        if (competition?.status !== "racing") return;
+        const room = await getComp(data.competitionId);
+        if (!room || room.status === "waiting") {
+          await startCompetitionNow(data.competitionId, Date.now() + 3000);
+        }
+      } catch (error) {
+        console.error("[sync_competition]", error);
       }
     });
 

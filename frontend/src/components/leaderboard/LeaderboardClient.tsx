@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from "react";
+import { useSession } from "next-auth/react";
 import { BoardTabs }        from "@/components/leaderboard/BoardTabs";
 import { LeaderboardTable, type LeaderboardEntry } from "@/components/leaderboard/LeaderboardTable";
 import { Pagination }       from "@/components/leaderboard/Pagination";
@@ -17,22 +18,39 @@ interface LeaderboardData {
   currentUserScore: number | null;
 }
 
+interface Competition {
+  id:   string;
+  name: string;
+  status: string;
+}
+
+type Scope = "overall" | "competition";
+
 const LIMIT = 25;
 
 export function LeaderboardClient() {
-  const [board,      setBoard]      = useState<BoardType>("alltime");
-  const [page,       setPage]       = useState(1);
-  const [data,       setData]       = useState<LeaderboardData | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState("");
+  const { data: session } = useSession();
+  const [scope, setScope] = useState<Scope>("overall");
+  const [board, setBoard] = useState<BoardType>("alltime");
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<LeaderboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [isPending,  startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+
+  // Competition scope state
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitionId, setCompetitionId] = useState<string | null>(null);
+  const [compEntries, setCompEntries] = useState<LeaderboardEntry[]>([]);
+  const [compTotal, setCompTotal] = useState(0);
+  const [compLoading, setCompLoading] = useState(false);
 
   const fetchLeaderboard = useCallback(async (b: BoardType, p: number) => {
     setLoading(true);
     setError("");
     try {
-      const res  = await fetch(`/api/leaderboard?board=${b}&page=${p}&limit=${LIMIT}`);
+      const res = await fetch(`/api/leaderboard?board=${b}&page=${p}&limit=${LIMIT}`);
       if (!res.ok) throw new Error("Failed to load leaderboard");
       const json = await res.json();
       setData(json);
@@ -44,18 +62,73 @@ export function LeaderboardClient() {
     }
   }, []);
 
-  // Fetch on mount and when board/page changes
   useEffect(() => {
+    if (scope !== "overall") return;
     fetchLeaderboard(board, page);
-  }, [board, page, fetchLeaderboard]);
+  }, [scope, board, page, fetchLeaderboard]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchLeaderboard(board, page);
-    }, 30_000);
+    if (scope !== "overall") return;
+    const interval = setInterval(() => fetchLeaderboard(board, page), 30_000);
     return () => clearInterval(interval);
-  }, [board, page, fetchLeaderboard]);
+  }, [scope, board, page, fetchLeaderboard]);
+
+  // Load competitions when entering competition scope
+  useEffect(() => {
+    if (scope !== "competition") return;
+    let active = true;
+    fetch("/api/compete")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!active) return;
+        const list: Competition[] = (d?.competitions ?? []).map((c: any) => ({
+          id: c.id,
+          name: c.name ?? c.title ?? "Competition",
+          status: c.status ?? "upcoming",
+        }));
+        setCompetitions(list);
+        if (!competitionId && list.length > 0) setCompetitionId(list[0].id);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [scope, competitionId]);
+
+  const fetchCompetitionLeaderboard = useCallback(async (id: string) => {
+    setCompLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/compete/${id}/leaderboard`);
+      if (!res.ok) throw new Error("Failed to load competition leaderboard");
+      const json = await res.json();
+      const mapped: LeaderboardEntry[] = (json.entries ?? []).map((e: any) => ({
+        rank: e.rank,
+        userId: e.userId,
+        wpm: e.wpm,
+        isMe: e.userId === session?.user?.id,
+        user: e.user ?? null,
+      }));
+      setCompEntries(mapped);
+      setCompTotal(json.total ?? mapped.length);
+      setLastUpdate(new Date());
+    } catch {
+      setError("Failed to load competition leaderboard. Please try again.");
+    } finally {
+      setCompLoading(false);
+    }
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    if (scope === "competition" && competitionId) {
+      fetchCompetitionLeaderboard(competitionId);
+    }
+  }, [scope, competitionId, fetchCompetitionLeaderboard]);
+
+  function handleScopeChange(next: Scope) {
+    startTransition(() => {
+      setScope(next);
+      setPage(1);
+    });
+  }
 
   function handleBoardChange(b: BoardType) {
     startTransition(() => {
@@ -73,93 +146,127 @@ export function LeaderboardClient() {
 
   return (
     <div className="space-y-4">
-
-      {/* Your rank card */}
-      <UserRankCard
-        rank={data?.currentUserRank ?? null}
-        wpm={data?.currentUserScore ?? null}
-        board={board}
-      />
-
-      {/* Board filter tabs */}
-      <BoardTabs value={board} onChange={handleBoardChange} />
-
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-medium text-ink-2 uppercase tracking-wider">
-            {board === "alltime" ? "All-time rankings" :
-             board === "weekly"  ? "This week's rankings" :
-                                   "Today's rankings"}
-          </h2>
-          {data && (
-            <p className="text-xs text-ink-3 mt-0.5">
-              {data.total.toLocaleString()} racers ranked
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {lastUpdate && (
-            <p className="text-xs text-ink-3">
-              Updated {lastUpdate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </p>
-          )}
+      {/* Scope switcher */}
+      <div className="flex items-center gap-2 bg-surface-2 p-1 rounded-xl w-fit">
+        {(["overall", "competition"] as Scope[]).map((s) => (
           <button
-            onClick={() => fetchLeaderboard(board, page)}
-            disabled={loading}
-            className="text-xs text-ink-3 hover:text-ink-2 transition-colors
-                       flex items-center gap-1.5 disabled:opacity-40"
+            key={s}
+            onClick={() => handleScopeChange(s)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
+              scope === s ? "bg-surface-1 text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"
+            }`}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-              className={loading ? "animate-spin" : ""}>
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-            </svg>
-            Refresh
+            {s === "overall" ? "Overall rankings" : "Competition rankings"}
           </button>
-        </div>
+        ))}
       </div>
 
-      {/* Error state */}
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4
-                        text-sm text-red-400 flex items-center gap-3">
-          <span>⚠</span>
-          <span>{error}</span>
-          <button onClick={() => fetchLeaderboard(board, page)}
-            className="ml-auto text-red-400 hover:text-red-300 underline text-xs">
-            Retry
-          </button>
-        </div>
+      {scope === "overall" && (
+        <>
+          <UserRankCard
+            rank={data?.currentUserRank ?? null}
+            wpm={data?.currentUserScore ?? null}
+            board={board}
+          />
+
+          <BoardTabs value={board} onChange={handleBoardChange} />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-medium text-ink-2 uppercase tracking-wider">
+                {board === "alltime" ? "All-time rankings" :
+                 board === "weekly" ? "This week's rankings" :
+                                      "Today's rankings"}
+              </h2>
+              {data && (
+                <p className="text-xs text-ink-3 mt-0.5">
+                  {data.total.toLocaleString()} racers ranked
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {lastUpdate && (
+                <p className="text-xs text-ink-3">
+                  Updated {lastUpdate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              )}
+              <button
+                onClick={() => fetchLeaderboard(board, page)}
+                disabled={loading}
+                className="text-xs text-ink-3 hover:text-ink-2 transition-colors flex items-center gap-1.5 disabled:opacity-40"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
+          <LeaderboardTable entries={data?.entries ?? []} loading={loading && !data} />
+
+          {data && (
+            <Pagination
+              page={data.page}
+              totalPages={data.totalPages}
+              total={data.total}
+              limit={data.limit}
+              onChange={handlePageChange}
+            />
+          )}
+
+          {board !== "alltime" && !loading && (
+            <p className="text-xs text-ink-3 text-center pt-2">
+              {board === "weekly"
+                ? "⏱ Resets every Monday at midnight UTC"
+                : "⏱ Resets every day at midnight UTC"}
+            </p>
+          )}
+        </>
       )}
 
-      {/* Table */}
-      <LeaderboardTable
-        entries={data?.entries ?? []}
-        loading={loading && !data}
-      />
+      {scope === "competition" && (
+        <>
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="text-xs text-ink-3 uppercase tracking-wider">Competition</label>
+            <select
+              value={competitionId ?? ""}
+              onChange={(e) => setCompetitionId(e.target.value)}
+              className="bg-surface-2 border border-surface-3 rounded-lg px-3 py-2 text-sm text-ink"
+            >
+              {competitions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.status})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => competitionId && fetchCompetitionLeaderboard(competitionId)}
+              disabled={compLoading || !competitionId}
+              className="text-xs text-ink-3 hover:text-ink-2 transition-colors disabled:opacity-40"
+            >
+              Refresh
+            </button>
+          </div>
 
-      {/* Pagination */}
-      {data && (
-        <Pagination
-          page={data.page}
-          totalPages={data.totalPages}
-          total={data.total}
-          limit={data.limit}
-          onChange={handlePageChange}
-        />
-      )}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-5 py-4 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
-      {/* Reset info */}
-      {board !== "alltime" && !loading && (
-        <p className="text-xs text-ink-3 text-center pt-2">
-          {board === "weekly"
-            ? "⏱ Resets every Monday at midnight UTC"
-            : "⏱ Resets every day at midnight UTC"}
-        </p>
+          <LeaderboardTable entries={compEntries} loading={compLoading && compEntries.length === 0} />
+
+          {compTotal > 0 && (
+            <p className="text-xs text-ink-3 text-center pt-2">
+              {compTotal.toLocaleString()} racers ranked in this competition
+            </p>
+          )}
+        </>
       )}
     </div>
   );

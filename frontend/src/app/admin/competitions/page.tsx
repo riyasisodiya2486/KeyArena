@@ -10,6 +10,7 @@ interface Competition {
   name:              string;
   description:       string | null;
   scheduledAt:       string;
+  endTime?:          string;
   maxParticipants:   number;
   registrationCount: number;
   status:            string;
@@ -32,6 +33,7 @@ export default function AdminCompetitionsPage() {
     description:     "",
     reward:          "",
     scheduledAt:     "",
+    endsAt:          "",
     maxParticipants: "500",
   });
   const [creating, setCreating] = useState(false);
@@ -61,6 +63,7 @@ export default function AdminCompetitionsPage() {
           ...form,
           maxParticipants: Number(form.maxParticipants),
           scheduledAt:     new Date(form.scheduledAt).toISOString(),
+          endsAt:          form.endsAt ? new Date(form.endsAt).toISOString() : undefined,
         }),
       });
       const data = await res.json().catch(() => null);
@@ -69,7 +72,7 @@ export default function AdminCompetitionsPage() {
       }
       if (!data?.competition) throw new Error("The server did not return the created competition.");
       setSuccess(`Competition "${data.competition.title ?? data.competition.name}" created!`);
-      setForm({ name: "", description: "", reward: "", scheduledAt: "", maxParticipants: "500" });
+      setForm({ name: "", description: "", reward: "", scheduledAt: "", endsAt: "", maxParticipants: "500" });
       await fetchComps();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create competition.");
@@ -197,6 +200,18 @@ export default function AdminCompetitionsPage() {
 
               <div>
                 <label className="block text-xs text-ink-3 uppercase tracking-wider mb-1.5">
+                  Ends at (optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={form.endsAt}
+                  onChange={e => setForm(f => ({ ...f, endsAt: e.target.value }))}
+                  className="input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-ink-3 uppercase tracking-wider mb-1.5">
                   Description
                 </label>
                 <input
@@ -271,7 +286,8 @@ export default function AdminCompetitionsPage() {
                       {comp.description && <p className="text-sm text-ink-2 mb-1">{comp.description}</p>}
                       {comp.reward && <p className="text-sm text-brand-400 mb-1"><strong>Reward:</strong> {comp.reward}</p>}
                       <p className="text-xs text-ink-3">
-                         {format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")} ·
+                         {format(new Date(comp.scheduledAt), "MMM d, yyyy · h:mm a")}
+                         {comp.endTime && ` → ${format(new Date(comp.endTime), "MMM d, yyyy · h:mm a")}`} ·
                          {comp.registrationCount}/{comp.maxParticipants} registered ·
                         🆔 <span className="font-mono">{comp.id.slice(0, 8)}</span>
                       </p>

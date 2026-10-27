@@ -296,12 +296,15 @@ export function InsightsDashboard() {
                     cursorIndex={engine.cursorIndex}
                   />
                   {!drillDone[drillIndex] && (
-                    <TypingInput
-                      value={engine.inputValue}
-                      status={engine.status}
-                      onChange={engine.handleInput}
-                      onStart={engine.startRace}
-                    />
+                    <div className="min-h-[44px]">
+                      <TypingInput
+                        value={engine.inputValue}
+                        status={engine.status}
+                        onChange={engine.handleInput}
+                        onStart={engine.startRace}
+                        captureGlobalHotkeys
+                      />
+                    </div>
                   )}
                   {engine.status === "racing" && (
                     <div className="flex gap-4 text-sm">
