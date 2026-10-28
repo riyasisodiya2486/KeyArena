@@ -1,5 +1,6 @@
 import "dotenv/config";
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { Server as SocketServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
@@ -15,7 +16,17 @@ import { registerRaceSocket } from "./sockets/race.js";
 const PORT   = Number(process.env.PORT ?? 4000);
 const IS_DEV = process.env.NODE_ENV !== "production";
 
+// Support a single origin or a comma-separated list of origins.
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim()).filter(Boolean)
+  : ["http://localhost:3000", "http://localhost:3001"];
+
 const app = Fastify({ logger: IS_DEV });
+
+await app.register(cors, {
+  origin: allowedOrigins,
+  credentials: true,
+});
 
 // Add AFTER the global rate limit registration:
 // @fastify/rate-limit (already registered at 100/min globally)
@@ -49,7 +60,7 @@ const competitionCommandClient = pubClient.duplicate();
 await Promise.all([pubClient.connect(), subClient.connect(), competitionCommandClient.connect()]);
 
 const io = new SocketServer(httpServer, {
-  cors:    { origin: process.env.FRONTEND_URL ?? "http://localhost:3000", credentials: true },
+  cors:    { origin: allowedOrigins, credentials: true },
   adapter: createAdapter(pubClient, subClient),
   // Tune for competition scale
   pingTimeout:  20000,
