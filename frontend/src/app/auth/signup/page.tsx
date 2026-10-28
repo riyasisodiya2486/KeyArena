@@ -104,6 +104,14 @@ export default function SignUpPage() {
         }}
       />
 
+      <section className="ka-auth-stage ka-signup-stage">
+        <aside className="ka-auth-story">
+          <p className="ka-auth-kicker">KEYARENA / JOIN THE FIELD</p>
+          <h1>Practice<br />with <em>purpose.</em></h1>
+          <p>Build a rhythm, track every run, and find your place among typists pushing for more.</p>
+          <div className="ka-auth-stat"><strong>01<span> / 04</span></strong><i /><small>CREATE YOUR RACER PROFILE</small></div>
+          <div className="ka-auth-orbit" aria-hidden="true"><b>K</b><i /><i /><i /></div>
+        </aside>
       <div className="ka-auth-card relative w-full max-w-sm mx-auto my-auto p-4">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -290,6 +298,7 @@ export default function SignUpPage() {
           </Link>
         </div>
       </div>
+      </section>
     </div>
   );
 }

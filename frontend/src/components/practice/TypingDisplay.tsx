@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import type { CharState } from "@/hooks/useTypingEngine";
 import { clsx } from "clsx";
 
@@ -15,6 +15,29 @@ export function TypingDisplay({ chars, charStates, cursorIndex, windowStartIndex
   const viewportRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLSpanElement>(null);
   const previousWindowRef = useRef(windowStartIndex);
+  const cursorChar = chars[cursorIndex];
+  const [fontFamily, setFontFamily] = useState("mono");
+  const [fontSize, setFontSize] = useState("22");
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("keyarena-typing-display") ?? "{}");
+      if (["mono", "sans", "serif"].includes(saved.fontFamily)) setFontFamily(saved.fontFamily);
+      if (["18", "22", "26", "30"].includes(saved.fontSize)) setFontSize(saved.fontSize);
+    } catch {
+      // Ignore invalid local preferences and keep the readable defaults.
+    }
+  }, []);
+
+  function savePreference(next: { fontFamily?: string; fontSize?: string }) {
+    const preference = {
+      fontFamily: next.fontFamily ?? fontFamily,
+      fontSize: next.fontSize ?? fontSize,
+    };
+    setFontFamily(preference.fontFamily);
+    setFontSize(preference.fontSize);
+    try { localStorage.setItem("keyarena-typing-display", JSON.stringify(preference)); } catch { /* storage may be disabled */ }
+  }
 
   // Keep cursor in view as user scrolls through long passages
   useEffect(() => {
@@ -31,7 +54,7 @@ export function TypingDisplay({ chars, charStates, cursorIndex, windowStartIndex
     } else if (cursorRect.top < topLimit) {
       viewport.scrollTop -= topLimit - cursorRect.top;
     }
-  }, [cursorIndex, chars.length, chars[cursorIndex]]);
+  }, [cursorIndex, chars.length, cursorChar]);
 
   useEffect(() => {
     if (previousWindowRef.current !== windowStartIndex) {
@@ -41,12 +64,27 @@ export function TypingDisplay({ chars, charStates, cursorIndex, windowStartIndex
   }, [windowStartIndex]);
 
   return (
-    <div
+    <section className="ka-typing-area" aria-label="Typing passage">
+      <div className="ka-typing-toolbar">
+        <span>DISPLAY SETTINGS</span>
+        <label>FONT
+          <select aria-label="Typing font family" value={fontFamily} onChange={(event) => savePreference({ fontFamily: event.target.value })}>
+            <option value="mono">Mono</option><option value="sans">Sans</option><option value="serif">Serif</option>
+          </select>
+        </label>
+        <label>SIZE
+          <select aria-label="Typing font size" value={fontSize} onChange={(event) => savePreference({ fontSize: event.target.value })}>
+            <option value="18">18 px</option><option value="22">22 px</option><option value="26">26 px</option><option value="30">30 px</option>
+          </select>
+        </label>
+        <span className="ka-typing-saved">Saved on this device</span>
+      </div>
+      <div
       ref={viewportRef}
-      className="ka-typing-display relative whitespace-pre-wrap break-words font-mono text-[1.1rem] leading-[2.2] tracking-wide
-                 bg-surface-2 rounded-xl px-6 py-5 select-none overflow-hidden
-                 border border-surface-3"
-      style={{ minHeight: "140px", maxHeight: "220px", overflowY: "auto" }}
+      className={`ka-typing-display ka-font-${fontFamily} relative whitespace-pre-wrap break-words text-[1.1rem] leading-[2.2] tracking-wide
+                 bg-surface-2 px-6 py-5 select-none overflow-hidden
+                 border border-surface-3`}
+      style={{ "--typing-size": `${fontSize}px`, overflowY: "auto" } as React.CSSProperties}
     >
       {chars.map((char, i) => {
         const state = charStates[i];
@@ -85,6 +123,7 @@ export function TypingDisplay({ chars, charStates, cursorIndex, windowStartIndex
         <span className="inline-block w-[2px] h-[1.1em] bg-brand-400 
                          align-middle animate-blink ml-0.5" />
       )}
-    </div>
+      </div>
+    </section>
   );
 }

@@ -139,7 +139,7 @@ export function RoomClient({ code, userId, username, name, image }: RoomClientPr
 
   // ── Racing (+ countdown overlay) ─────────────────────────────────────────
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="ka-private-race-shell">
       {/* Countdown overlay */}
       {phase === "countdown" && <CountdownOverlay value={countdown} />}
 

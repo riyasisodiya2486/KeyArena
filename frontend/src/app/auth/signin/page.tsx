@@ -62,6 +62,14 @@ export default function SignInPage() {
         }}
       />
 
+      <section className="ka-auth-stage">
+        <aside className="ka-auth-story">
+          <p className="ka-auth-kicker">KEYARENA / YOUR NEXT PERSONAL BEST</p>
+          <h1>Find your<br /><em>flow state.</em></h1>
+          <p>Keep your progress close. Take on the rankings. Meet your next personal best one clean keystroke at a time.</p>
+          <div className="ka-auth-stat"><strong>42<span> WPM</span></strong><i /><small>YOUR NEXT RUN STARTS HERE</small></div>
+          <div className="ka-auth-orbit" aria-hidden="true"><b>K</b><i /><i /><i /></div>
+        </aside>
       <div className="ka-auth-card relative w-full max-w-sm mx-auto my-auto p-4">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -230,6 +238,7 @@ export default function SignInPage() {
           </Link>
         </div>
       </div>
+      </section>
     </div>
   );
 }

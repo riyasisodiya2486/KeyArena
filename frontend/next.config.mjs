@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Lets local verification builds use a separate cache while `next dev` is running.
+  distDir: process.env.NEXT_BUILD_DIR || ".next",
   // ── Images ────────────────────────────────────────────────────────────────
   images: {
     remotePatterns: [
