@@ -52,10 +52,11 @@ export function Navbar() {
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2 group">
               <Image
-                src="/logo.png"
+                src="/logo.png?v=2"
                 alt="KeyArena logo"
                 width={32}
                 height={32}
+                unoptimized
                 className="rounded-md transition-transform group-hover:scale-105"
               />
               <span className="text-xl font-bold tracking-[-.06em] text-[#F2EEE6] transition-colors group-hover:text-[#E45B46]">
