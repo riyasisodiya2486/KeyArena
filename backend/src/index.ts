@@ -1,6 +1,5 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import cors from "@fastify/cors";
 import { Server as SocketServer } from "socket.io";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
@@ -23,9 +22,19 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 const app = Fastify({ logger: IS_DEV });
 
-await app.register(cors, {
-  origin: allowedOrigins,
-  credentials: true,
+// Manual CORS handling (avoids @fastify/cors version mismatch with Fastify 4)
+app.addHook("onRequest", async (request, reply) => {
+  const origin = request.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    reply.header("Access-Control-Allow-Origin", origin);
+    reply.header("Access-Control-Allow-Credentials", "true");
+    reply.header("Vary", "Origin");
+  }
+  if (request.method === "OPTIONS") {
+    reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    reply.code(204).send();
+  }
 });
 
 // Add AFTER the global rate limit registration:
